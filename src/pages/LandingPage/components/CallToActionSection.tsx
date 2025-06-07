@@ -3,7 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Gift } from 'lucide-react'; // Example icons
+import { ArrowRight, Gift } from 'lucide-react';
 
 const CallToActionSection: React.FC = () => {
   return (
@@ -15,7 +15,7 @@ const CallToActionSection: React.FC = () => {
           transition={{ duration: 0.6 }}
           viewport={{ once: true, amount: 0.5 }}
         >
-          <Gift className="w-16 h-16 mx-auto mb-6 text-yellow-300" /> {/* Gift icon for "free" */}
+          <Gift className="w-16 h-16 mx-auto mb-6 text-yellow-300" />
           <h2 className="text-3xl sm:text-4xl font-bold mb-6">
             Prêt à Transformer Votre Façon de Travailler ?
           </h2>
