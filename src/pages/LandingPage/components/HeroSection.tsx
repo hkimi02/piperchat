@@ -3,7 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { PlayCircle, Rocket } from 'lucide-react'; // Example icons
+import { ArrowRight, Rocket } from 'lucide-react'; // Example icons
 
 const HeroSection: React.FC = () => {
   return (
@@ -35,9 +35,9 @@ const HeroSection: React.FC = () => {
             </Link>
           </Button>
           <Button variant="outline" size="lg" asChild className="shadow-lg hover:shadow-accent/30 transition-shadow">
-            <Link to="/#how-it-works"> {/* Link to a future "How it Works" section */}
-              Voir une Démo
-              <PlayCircle className="ml-2 h-5 w-5" />
+            <Link to="/login"> {/* Link to a future "How it Works" section */}
+              Connexion
+              <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
         </motion.div>
