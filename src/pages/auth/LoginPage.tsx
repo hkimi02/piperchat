@@ -5,8 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { MessageSquare, Loader2 } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
+import { useDispatch } from 'react-redux';
+import { loginSuccess, loginFailure } from '@/slices/authSlice';
 import { login } from '@/services/Auth/authService';
+import Loader from "@/components/ui/loader.tsx";
+
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -14,6 +18,7 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -22,12 +27,25 @@ const LoginPage: React.FC = () => {
 
     try {
       const response = await login({ email, password });
+      console.log(response.status==='ok');
       if (response.status === 'ok') {
+      const user= response?.user;
+        const access_token = response?.access_token;
+        console.log("user:", user, "access_token:", access_token);
+        if (access_token != null) {
+          localStorage.setItem('token', access_token);
+        }
+        console.log("user:", user, "access_token:", access_token);
+        // Dispatch loginSuccess to update Redux state
+        // @ts-expect-error
+        dispatch(loginSuccess({ user, access_token }));
         navigate('/dashboard');
       } else {
         throw new Error(response.message);
       }
     } catch (err: any) {
+      // Dispatch loginFailure to update Redux state
+      dispatch(loginFailure(err.message || 'Échec de la connexion. Vérifiez vos informations.'));
       if (err.message.includes('Email not verified')) {
         navigate('/verify-email', { state: { email } });
       } else {
@@ -37,6 +55,10 @@ const LoginPage: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return <Loader />;
+  }
 
   return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 via-background to-background p-4 sm:p-6 lg:p-8">
@@ -84,10 +106,7 @@ const LoginPage: React.FC = () => {
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                   {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Connexion...
-                      </>
+                      <span>Connexion...</span>
                   ) : (
                       'Se Connecter'
                   )}
