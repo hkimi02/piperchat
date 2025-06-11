@@ -160,7 +160,7 @@ export const refreshToken = async (): Promise<RefreshTokenResponse> => {
     return response.data;
 };
 
-export const getCurrentUser = async (): Promise<UserResponse> => {
+export const me = async (): Promise<UserResponse> => {
     const response = await apiClient.get<UserResponse>('/auth/me');
     return response.data;
 };
