@@ -7,7 +7,7 @@ export default function ChatLayout() {
       <div className="w-[320px] flex-shrink-0 border-r">
         <ChatroomList />
       </div>
-      <div className="flex-1">
+      <div className="flex-1 overflow-hidden">
         <ChatArea />
       </div>
     </div>

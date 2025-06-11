@@ -23,7 +23,7 @@ const ChatArea = () => {
             dispatch(fetchMessages(String(selectedChatroom.id)));
 
             const channel = echo.private(`chat.${selectedChatroom.id}`);
-            channel.listen('MessageSent', (data: { message: Message }) => {
+            channel.listen('.MessageSent', (data: { message: Message }) => {
                 dispatch(addMessage(data.message));
             });
 
@@ -61,7 +61,7 @@ const ChatArea = () => {
             <div className="p-4 border-b">
                 <h2 className="text-lg font-semibold">{selectedChatroom.name}</h2>
             </div>
-            <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+            <ScrollArea className="flex-1 h-0 p-4" ref={scrollAreaRef}>
                 <div className="space-y-4">
                     {messages.map((message) => {
                         const isCurrentUser = message.user.id === currentUser?.id;

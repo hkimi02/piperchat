@@ -43,7 +43,7 @@ function App() {
             </Route>
 
             {/* Protected Routes - Only accessible when authenticated */}
-            <Route element={<ProtectedRoute role="ADMIN" />}>
+            <Route element={<ProtectedRoute></ProtectedRoute>}>
               <Route element={<AuthenticatedLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/chat" element={<ChatPage />} />
