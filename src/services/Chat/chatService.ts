@@ -17,3 +17,9 @@ export const sendMessage = async (chatroomId: string, content: string) => {
     const response = await apiClient.post(`/chatrooms/${chatroomId}/messages`, { content });
     return response.data;
 };
+
+// Create a new chatroom
+export const createChatroom = async (name: string) => {
+    const response = await apiClient.post('/chatrooms', { name });
+    return response.data;
+};

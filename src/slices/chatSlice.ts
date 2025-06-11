@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import * as chatService from '@/services/Chat/chatService';
-import type { Chatroom, Message } from '@/pages/Chat/data'; // Assuming data types are in this file
+import type { Chatroom, Message } from '@/pages/Chat/data';
 
 // Define the shape of the chat state
 interface ChatState {
@@ -32,6 +32,10 @@ export const fetchMessages = createAsyncThunk('chat/fetchMessages', async (chatr
 
 export const postMessage = createAsyncThunk('chat/postMessage', async ({ chatroomId, content }: { chatroomId: string; content: string }) => {
     return await chatService.sendMessage(chatroomId, content);
+});
+
+export const createChatroom = createAsyncThunk('chat/createChatroom', async (name: string) => {
+    return await chatService.createChatroom(name);
 });
 
 // Chat slice
@@ -71,6 +75,17 @@ const chatSlice = createSlice({
             .addCase(fetchMessages.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.error.message || 'Failed to fetch messages';
+            })
+            .addCase(createChatroom.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(createChatroom.fulfilled, (state) => {
+                state.loading = false;
+            })
+            .addCase(createChatroom.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message || 'Failed to create chatroom';
             });
     },
 });
