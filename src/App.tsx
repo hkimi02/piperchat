@@ -12,6 +12,7 @@ import NotFoundPage from '@/pages/NotFoundPage';
 import LoginPage from '@/pages/auth/LoginPage';
 import RegisterPage from '@/pages/auth/RegisterPage';
 import VerifyEmailPage from '@/pages/auth/VerifyEmailPage';
+import DashboardPage from '@/pages/DashboardPage';
 import PublicRoute from '@/router/components/PublicRoute';
 import ProtectedRoute from '@/router/components/ProtectedRoute';
 import { Provider } from 'react-redux';
@@ -43,7 +44,7 @@ function App() {
             {/* Protected Routes - Only accessible when authenticated */}
             <Route element={<ProtectedRoute role="ADMIN" />}>
               <Route element={<AuthenticatedLayout />}>
-                <Route path="/dashboard" element={<div>Authenticated Dashboard (Placeholder)</div>} />
+                <Route path="/dashboard" element={<DashboardPage />} />
               </Route>
             </Route>
 
