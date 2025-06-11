@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import apiClient from '@/services/apiClient';
 import {
   Popover,
   PopoverContent,
@@ -8,15 +9,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Phone } from 'lucide-react';
 
-interface UserProfileProps {
-  name: string;
+interface User {
+  id: number;
+  full_name: string;
   email: string;
-  avatarSrc?: string;
-  avatarFallback: string;
+  profile_picture: string | null;
+}
+
+interface UserProfileProps {
+  user: User;
   children: React.ReactNode;
 }
 
-const UserProfile: React.FC<UserProfileProps> = ({ name, email, avatarSrc, avatarFallback, children }) => {
+const UserProfile: React.FC<UserProfileProps> = ({ user, children }) => {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -25,12 +30,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ name, email, avatarSrc, avata
       <PopoverContent className="w-80">
         <div className="flex flex-col items-center gap-4 py-4">
             <Avatar className="h-24 w-24">
-                <AvatarImage src={avatarSrc} />
-                <AvatarFallback className="text-4xl">{avatarFallback}</AvatarFallback>
+                <AvatarImage src={user.profile_picture || ''} />
+                <AvatarFallback className="text-4xl">{user.full_name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="text-center">
-                <h3 className="text-xl font-bold">{name}</h3>
-                <p className="text-sm text-muted-foreground">{email}</p>
+                <h3 className="text-xl font-bold">{user.full_name}</h3>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
             </div>
             <div className="flex gap-4 mt-4">
                 <Button variant="outline">
@@ -47,42 +52,39 @@ const UserProfile: React.FC<UserProfileProps> = ({ name, email, avatarSrc, avata
 };
 
 const MemberList: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await apiClient.get<User[]>('/organisation/users');
+        setUsers(response.data);
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
   return (
     <div className="w-60 bg-muted/40 p-3 flex flex-col gap-4">
       <div>
-        <h2 className="font-semibold text-sm text-muted-foreground mb-2">En ligne - 2</h2>
+        <h2 className="font-semibold text-sm text-muted-foreground mb-2">Membres - {users.length}</h2>
         <div className="flex flex-col gap-3">
-                    <UserProfile name="elyes" email="elyes@example.com" avatarSrc="https://github.com/shadcn.png" avatarFallback="E">
-            <div className="flex items-center gap-2 cursor-pointer hover:bg-muted p-1 rounded-md">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="https://github.com/shadcn.png" />
-                <AvatarFallback>E</AvatarFallback>
-              </Avatar>
-              <span className="font-medium">elyes</span>
-            </div>
-          </UserProfile>
-          <UserProfile name="cascade" email="cascade@example.com" avatarSrc="https://github.com/random.png" avatarFallback="C">
-            <div className="flex items-center gap-2 cursor-pointer hover:bg-muted p-1 rounded-md">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="https://github.com/random.png" />
-                <AvatarFallback>C</AvatarFallback>
-              </Avatar>
-              <span className="font-medium">cascade</span>
-            </div>
-          </UserProfile>
+          {users.map(user => (
+            <UserProfile key={user.id} user={user}>
+              <div className="flex items-center gap-2 cursor-pointer hover:bg-muted p-1 rounded-md">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user.profile_picture || ''} />
+                  <AvatarFallback>{user.full_name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <span className="font-medium">{user.full_name}</span>
+              </div>
+            </UserProfile>
+          ))}
         </div>
       </div>
-       <div>
-        <h2 className="font-semibold text-sm text-muted-foreground mb-2">Hors ligne - 1</h2>
-        <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-2 opacity-50">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback>U3</AvatarFallback>
-            </Avatar>
-            <span className="font-medium">Utilisateur 3</span>
-          </div>
-        </div>
-      </div>
+       
     </div>
   );
 };
