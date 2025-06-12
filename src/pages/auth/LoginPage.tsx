@@ -37,7 +37,6 @@ const LoginPage: React.FC = () => {
         }
         console.log("user:", user, "access_token:", access_token);
         // Dispatch loginSuccess to update Redux state
-        // @ts-expect-error
         dispatch(loginSuccess({ user, access_token }));
         navigate('/dashboard');
       } else {
