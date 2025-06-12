@@ -19,7 +19,7 @@ export const sendMessage = async (chatroomId: string, content: string) => {
 };
 
 // Create a new chatroom
-export const createChatroom = async (name: string) => {
-    const response = await apiClient.post('/chatrooms', { name });
+export const createChatroom = async (data: any) => {
+    const response = await apiClient.post('/chatrooms',data);
     return response.data;
 };

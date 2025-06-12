@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
+import React, { useState, useEffect, useMemo } from 'react';
+import { DndContext, closestCenter, useDroppable, type DragEndEvent } from '@dnd-kit/core';
 import {
     SortableContext,
     verticalListSortingStrategy,
@@ -25,7 +25,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
@@ -40,14 +40,15 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import taskService from '@/services/Tasks/taskService';
+import projectService from '@/services/Projects/projectService';
+import { useSelector } from 'react-redux';
 
 interface User {
-    id: string;
-    name: string;
-    email: string;
-    avatar?: string;
+    id: number;
+    first_name: string;
+    last_name: string;
     initials: string;
-    color: string;
 }
 
 interface Tag {
@@ -56,15 +57,16 @@ interface Tag {
 }
 
 interface Task {
-    id: string;
+    id: number;
     title: string;
-    description: string;
+    description?: string;
     status: string;
-    projectId: string;
-    assigneeId: string;
-    priority: 'low' | 'medium' | 'high' | 'urgent';
-    dueDate?: string;
+    project_id: number;
+    user_id: number | null;
+    priority?: 'low' | 'medium' | 'high' | 'urgent';
+    due_date?: string;
     tags: Tag[];
+    user?: User;
 }
 
 interface Column {
@@ -74,77 +76,19 @@ interface Column {
     limit?: number;
 }
 
-interface Project {
-    id: string;
-    name: string;
-    color: string;
-}
-
 interface HistoryItem {
     action: 'delete' | 'edit';
     task: Task;
     previousState?: Task;
 }
 
-// Mock data
-const mockUsers: User[] = [
-    { id: 'user-1', name: 'Alice Johnson', email: 'alice@company.com', initials: 'AJ', color: 'bg-blue-500' },
-    { id: 'user-2', name: 'Bob Smith', email: 'bob@company.com', initials: 'BS', color: 'bg-green-500' },
-    { id: 'user-3', name: 'Carol Davis', email: 'carol@company.com', initials: 'CD', color: 'bg-purple-500' },
-    { id: 'user-4', name: 'David Wilson', email: 'david@company.com', initials: 'DW', color: 'bg-orange-500' },
-];
+interface RootState {
+    auth: { user: { id: number; role: 'ADMIN' | 'USER'; organisation_id: number } | null };
+}
 
-const mockProjects: Project[] = [
-    { id: 'proj-1', name: 'Website Redesign', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-    { id: 'proj-2', name: 'Mobile App', color: 'bg-green-100 text-green-800 border-green-200' },
-    { id: 'proj-3', name: 'API Development', color: 'bg-purple-100 text-purple-800 border-purple-200' },
-];
-
-const initialTasks: Task[] = [
-    {
-        id: 'task-1',
-        title: 'Design System Components',
-        description: 'Create a comprehensive design system with reusable components for the dashboard interface',
-        status: 'todo',
-        projectId: 'proj-1',
-        assigneeId: 'user-1',
-        priority: 'high',
-        dueDate: '2025-06-20',
-        tags: [{ name: 'Design', color: 'bg-blue-200' }, { name: 'UI/UX', color: 'bg-purple-200' }]
-    },
-    {
-        id: 'task-2',
-        title: 'API Authentication Integration',
-        description: 'Implement OAuth 2.0 authentication flow and integrate with existing login system',
-        status: 'in-progress',
-        projectId: 'proj-2',
-        assigneeId: 'user-2',
-        priority: 'urgent',
-        dueDate: '2025-06-15',
-        tags: [{ name: 'Backend', color: 'bg-green-200' }, { name: 'Security', color: 'bg-red-200' }]
-    },
-    {
-        id: 'task-3',
-        title: 'User Acceptance Testing',
-        description: 'Conduct comprehensive testing of authentication flows and verify token refresh mechanisms',
-        status: 'review',
-        projectId: 'proj-1',
-        assigneeId: 'user-3',
-        priority: 'medium',
-        dueDate: '2025-06-25',
-        tags: [{ name: 'Testing', color: 'bg-yellow-200' }, { name: 'QA', color: 'bg-orange-200' }]
-    },
-    {
-        id: 'task-4',
-        title: 'Production Deployment',
-        description: 'Deploy backend services to production environment with proper monitoring and logging',
-        status: 'done',
-        projectId: 'proj-3',
-        assigneeId: 'user-4',
-        priority: 'high',
-        tags: [{ name: 'DevOps', color: 'bg-indigo-200' }, { name: 'Deployment', color: 'bg-teal-200' }]
-    },
-];
+interface KanbanBoardProps {
+    projectId: number;
+}
 
 const columns: Column[] = [
     { id: 'todo', title: 'To Do', color: 'border-l-slate-500', limit: 8 },
@@ -162,14 +106,13 @@ const priorityConfig = {
 
 const tagColors = [
     'bg-blue-200', 'bg-green-200', 'bg-red-200', 'bg-yellow-200',
-    'bg-purple-200', 'bg-orange-200', 'bg-indigo-200', 'bg-teal-200'
+    'bg-purple-200', 'bg-orange-200', 'bg-indigo-200', 'bg-teal-200',
 ];
 
-// Sortable task component
 const SortableTask: React.FC<{
     task: Task;
     columnId: string;
-    onDelete: (taskId: string) => void;
+    onDelete: (taskId: number) => void;
     onEdit: (task: Task) => void;
 }> = ({ task, onDelete, onEdit }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -181,11 +124,9 @@ const SortableTask: React.FC<{
         transition,
     };
 
-    const assignee = mockUsers.find(user => user.id === task.assigneeId);
-    const project = mockProjects.find(proj => proj.id === task.projectId);
-    const priority = priorityConfig[task.priority];
-
-    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'done';
+    const assignee = task.user;
+    const priority = task.priority ? priorityConfig[task.priority] : priorityConfig.medium;
+    const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
 
     return (
         <Card
@@ -206,7 +147,7 @@ const SortableTask: React.FC<{
                             {task.title}
                         </h3>
                         <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
-                            {task.description}
+                            {task.description || 'No description'}
                         </p>
                     </div>
                     <DropdownMenu>
@@ -243,26 +184,20 @@ const SortableTask: React.FC<{
                     </div>
                 )}
 
-                {project && (
-                    <Badge className={cn("text-xs font-medium border", project.color)}>
-                        {project.name}
-                    </Badge>
-                )}
-
                 <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                     <div className="flex items-center space-x-2">
                         <Badge className={cn("text-xs border px-2 py-0.5", priority.color)}>
                             <span className="mr-1">{priority.icon}</span>
-                            {task.priority}
+                            {task.priority || 'Medium'}
                         </Badge>
 
-                        {task.dueDate && (
+                        {task.due_date && (
                             <div className={cn(
                                 "flex items-center text-xs",
                                 isOverdue ? "text-red-600" : "text-gray-500"
                             )}>
                                 <Calendar className="h-3 w-3 mr-1" />
-                                {new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                             </div>
                         )}
                     </div>
@@ -270,8 +205,7 @@ const SortableTask: React.FC<{
                     {assignee && (
                         <div className="flex items-center space-x-1">
                             <Avatar className="h-6 w-6">
-                                <AvatarImage src={assignee.avatar} alt={assignee.name} />
-                                <AvatarFallback className={cn("text-xs font-medium text-white", assignee.color)}>
+                                <AvatarFallback className="text-xs font-medium text-white bg-blue-500">
                                     {assignee.initials}
                                 </AvatarFallback>
                             </Avatar>
@@ -283,10 +217,24 @@ const SortableTask: React.FC<{
     );
 };
 
-const KanbanBoard: React.FC = () => {
-    const [tasks, setTasks] = useState<Task[]>(initialTasks);
-    const [selectedProject, setSelectedProject] = useState<string>('all');
-    const [selectedUser, setSelectedUser] = useState<string>('all');
+const DroppableColumn: React.FC<{
+    id: string;
+    children: React.ReactNode;
+}> = ({ id, children }) => {
+    const { setNodeRef } = useDroppable({
+        id,
+    });
+
+    return (
+        <div ref={setNodeRef} className="h-full">
+            {children}
+        </div>
+    );
+};
+
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectId }) => {
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [users, setUsers] = useState<User[]>([]);
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [newTaskDescription, setNewTaskDescription] = useState('');
     const [newTaskAssignee, setNewTaskAssignee] = useState('');
@@ -296,135 +244,247 @@ const KanbanBoard: React.FC = () => {
     const [newTagName, setNewTagName] = useState('');
     const [newTagColor, setNewTagColor] = useState(tagColors[0]);
     const [editTask, setEditTask] = useState<Task | null>(null);
-    const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
+    const [deleteTaskId, setDeleteTaskId] = useState<number | null>(null);
     const [history, setHistory] = useState<HistoryItem[]>([]);
+    const currentUser = useSelector((state: RootState) => state.auth.user);
 
-    // Filter tasks by user and project
-    const filteredTasks = tasks.filter((task) => {
-        const isInSelectedProject = selectedProject === 'all' || task.projectId === selectedProject;
-        const isAssignedToSelectedUser = selectedUser === 'all' || task.assigneeId === selectedUser;
-        return isInSelectedProject && isAssignedToSelectedUser;
-    });
+    // Memoize column tasks
+    const columnTasksMap = useMemo(() => {
+        return columns.reduce((acc, column) => {
+            acc[column.id] = tasks.filter((task) => task.status === column.id);
+            return acc;
+        }, {} as Record<string, Task[]>);
+    }, [tasks]);
+
+    // Fetch tasks and users
+    useEffect(() => {
+        const fetchData = async () => {
+            if (!currentUser) {
+                toast.error('User not authenticated.');
+                return;
+            }
+
+            try {
+                const taskResponse = await taskService.getTasks(projectId);
+                setTasks(taskResponse.data);
+
+                const userResponse = await projectService.getAllUsers();
+                setUsers(userResponse.data.map(user => ({
+                    ...user,
+                    initials: `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`
+                })));
+            } catch (error) {
+                console.error('Failed to fetch data:', error);
+                toast.error('Failed to load tasks or users.');
+            }
+        };
+
+        fetchData();
+    }, [projectId, currentUser]);
 
     // Handle drag end
-    const handleDragEnd = (event: DragEndEvent) => {
+    const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
 
         if (!over) return;
 
-        const activeTaskId = active.id as string;
-        const overId = over.id as string;
+        const activeTaskId = active.id as number;
+        const overId = over.id;
 
         const activeTask = tasks.find((task) => task.id === activeTaskId);
         if (!activeTask) return;
 
-        setTasks((prevTasks) => {
-            const newTasks = [...prevTasks];
-            const activeIndex = newTasks.findIndex((task) => task.id === activeTaskId);
+        let newTasks = [...tasks];
+        let newStatus = activeTask.status;
 
-            // If dropped on a column
-            if (columns.some((col) => col.id === overId)) {
-                newTasks[activeIndex] = { ...activeTask, status: overId };
-                return newTasks;
+        let targetColumnId: string | undefined;
+        if (typeof overId === 'string' && columns.some((col) => col.id === overId)) {
+            targetColumnId = overId;
+            newStatus = overId;
+        } else {
+            const overTaskId = typeof overId === 'string' ? parseInt(overId) : overId;
+            const overTask = tasks.find((task) => task.id === overTaskId);
+            if (overTask) {
+                targetColumnId = overTask.status;
+                newStatus = overTask.status;
+                const activeIndex = tasks.findIndex((task) => task.id === activeTaskId);
+                const overIndex = tasks.findIndex((task) => task.id === overTaskId);
+                newTasks = arrayMove(tasks, activeIndex, overIndex);
+            } else {
+                const targetColumn = columns.find((col) =>
+                    newTasks
+                        .filter((task) => task.status === col.id)
+                        .some((task) => task.id === activeTaskId)
+                );
+                if (targetColumn) {
+                    targetColumnId = targetColumn.id;
+                    newStatus = targetColumn.id;
+                }
             }
+        }
 
-            // If dropped on another task
-            const overIndex = newTasks.findIndex((task) => task.id === overId);
-            if (overIndex === -1) return prevTasks;
+        if (targetColumnId && targetColumnId !== activeTask.status) {
+            const targetColumn = columns.find((col) => col.id === targetColumnId);
+            const columnTasks = tasks.filter((task) => task.status === targetColumnId);
+            if (targetColumn?.limit && columnTasks.length >= targetColumn.limit) {
+                toast.error(`Cannot move task to ${targetColumn.title}: Column limit of ${targetColumn.limit} reached.`);
+                return;
+            }
+        }
 
-            const overTask = newTasks[overIndex];
-            newTasks[activeIndex] = { ...activeTask, status: overTask.status };
-            return arrayMove(newTasks, activeIndex, overIndex);
-        });
+        const updatedTasks = newTasks.map((task) =>
+            task.id === activeTaskId ? { ...task, status: newStatus } : task
+        );
+        const originalTasks = [...tasks];
+        setTasks(updatedTasks);
+
+        try {
+            await taskService.updateTask(activeTaskId, {
+                status: newStatus,
+                title: activeTask.title,
+                description: activeTask.description,
+                user_id: activeTask.user_id,
+                priority: activeTask.priority,
+                due_date: activeTask.due_date,
+                tags: activeTask.tags,
+            });
+        } catch (error) {
+            console.error('Failed to update task status:', error);
+            toast.error('Failed to update task status.');
+            setTasks(originalTasks);
+        }
     };
 
     // Add new task
-    const addTask = (columnId: string) => {
-        if (!newTaskTitle.trim() || !newTaskAssignee) return;
+    const addTask = async (columnId: string) => {
+        if (!newTaskTitle.trim() || !newTaskAssignee) {
+            toast.error('Title and assignee are required.');
+            return;
+        }
 
         const newTask: Task = {
-            id: `task-${Date.now()}`,
+            id: 0,
             title: newTaskTitle,
             description: newTaskDescription,
             status: columnId,
-            projectId: selectedProject === 'all' ? mockProjects[0].id : selectedProject,
-            assigneeId: newTaskAssignee,
-            priority: newTaskPriority,
-            dueDate: newTaskDueDate ? newTaskDueDate.toISOString() : undefined,
+            project_id: projectId,
+            user_id: parseInt(newTaskAssignee),
+            priority: newTaskPriority || 'medium',
+            due_date: newTaskDueDate ? newTaskDueDate.toISOString() : undefined,
             tags: newTaskTags,
         };
 
-        setTasks([...tasks, newTask]);
-        resetForm();
-        toast("Task Created", {
-            description: `${newTask.title} has been added.`,
-        });
+        try {
+            const response = await taskService.createTask({
+                ...newTask,
+                user_id: parseInt(newTaskAssignee),
+                project_id: projectId,
+            });
+            setTasks([...tasks, response.data]);
+            resetForm();
+            toast.success(`${newTask.title} has been added.`);
+        } catch (error) {
+            console.error('Failed to create task:', error);
+            toast.error('Failed to create task.');
+        }
     };
 
     // Edit task
-    const handleEditTask = () => {
-        if (!editTask || !editTask.title.trim() || !editTask.assigneeId) return;
+    const handleEditTask = async () => {
+        if (!editTask || !editTask.title.trim() || !editTask.user_id) {
+            toast.error('Title and assignee are required.');
+            return;
+        }
 
         const previousTask = tasks.find((task) => task.id === editTask.id);
-        setTasks(tasks.map((task) => (task.id === editTask.id ? editTask : task)));
-        setHistory([...history, { action: 'edit', task: editTask, previousState: previousTask }]);
-        setEditTask(null);
-        toast("Task Updated",{
-            description: `${editTask.title} has been updated.`,
-            action: (
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => undoLastAction()}
-                >
-                    Undo
-                </Button>
-            ),
-        });
+        try {
+            const response = await taskService.updateTask(editTask.id, {
+                title: editTask.title,
+                description: editTask.description,
+                status: editTask.status,
+                user_id: editTask.user_id,
+                priority: editTask.priority || 'medium',
+                due_date: editTask.due_date,
+                tags: editTask.tags,
+            });
+            setTasks(tasks.map((task) => (task.id === editTask.id ? response.data : task)));
+            setHistory([...history, { action: 'edit', task: response.data, previousState: previousTask }]);
+            setEditTask(null);
+            toast.success(`${editTask.title} has been updated.`, {
+                action: {
+                    label: 'Undo',
+                    onClick: () => undoLastAction(),
+                },
+            });
+        } catch (error) {
+            console.error('Failed to update task:', error);
+            toast.error('Failed to update task.');
+        }
     };
 
     // Delete task with confirmation
-    const confirmDeleteTask = (taskId: string) => {
+    const confirmDeleteTask = (taskId: number) => {
         setDeleteTaskId(taskId);
     };
 
-    const handleDeleteTask = () => {
+    const handleDeleteTask = async () => {
         if (!deleteTaskId) return;
         const taskToDelete = tasks.find((task) => task.id === deleteTaskId);
         if (taskToDelete) {
-            setTasks(tasks.filter((task) => task.id !== deleteTaskId));
-            setHistory([...history, { action: 'delete', task: taskToDelete }]);
-            toast("Task Deleted",{
-                description: `${taskToDelete.title} has been deleted.`,
-                action: (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => undoLastAction()}
-                    >
-                        Undo
-                    </Button>
-                ),
-            });
+            try {
+                await taskService.deleteTask(deleteTaskId);
+                setTasks(tasks.filter((task) => task.id !== deleteTaskId));
+                setHistory([...history, { action: 'delete', task: taskToDelete }]);
+                toast.success(`${taskToDelete.title} has been deleted.`, {
+                    action: {
+                        label: 'Undo',
+                        onClick: () => undoLastAction(),
+                    },
+                });
+            } catch (error) {
+                console.error('Failed to delete task:', error);
+                toast.error('Failed to delete task.');
+            }
         }
         setDeleteTaskId(null);
     };
 
     // Undo last action
-    const undoLastAction = () => {
+    const undoLastAction = async () => {
         if (history.length === 0) return;
 
         const lastAction = history[history.length - 1];
-        if (lastAction.action === 'delete') {
-            setTasks([...tasks, lastAction.task]);
-        } else if (lastAction.action === 'edit' && lastAction.previousState) {
-            setTasks(tasks.map((task) => (task.id === lastAction.task.id ? lastAction.previousState : task)));
+        try {
+            if (lastAction.action === 'delete') {
+                const response = await taskService.createTask({
+                    title: lastAction.task.title,
+                    description: lastAction.task.description,
+                    status: lastAction.task.status,
+                    project_id: lastAction.task.project_id,
+                    user_id: lastAction.task.user_id!,
+                    priority: lastAction.task.priority || 'medium',
+                    due_date: lastAction.task.due_date,
+                    tags: lastAction.task.tags,
+                });
+                setTasks([...tasks, response.data]);
+            } else if (lastAction.action === 'edit' && lastAction.previousState) {
+                const response = await taskService.updateTask(lastAction.task.id, {
+                    title: lastAction.previousState.title,
+                    description: lastAction.previousState.description,
+                    status: lastAction.previousState.status,
+                    user_id: lastAction.previousState.user_id,
+                    priority: lastAction.previousState.priority || 'medium',
+                    due_date: lastAction.previousState.due_date,
+                    tags: lastAction.previousState.tags,
+                });
+                setTasks(tasks.map((task) => (task.id === lastAction.task.id ? response.data : task)));
+            }
+            setHistory(history.slice(0, -1));
+            toast.success('Action undone.');
+        } catch (error) {
+            console.error('Failed to undo action:', error);
+            toast.error('Failed to undo action.');
         }
-        setHistory(history.slice(0, -1));
-        toast({
-            title: "Action Undone",
-            description: `Last action has been undone.`,
-        });
     };
 
     // Add tag
@@ -458,61 +518,17 @@ const KanbanBoard: React.FC = () => {
 
     // Get column task count
     const getColumnTaskCount = (columnId: string) => {
-        return filteredTasks.filter(task => task.status === columnId).length;
+        return columnTasksMap[columnId].length;
     };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-            {/* Header */}
-            <div className="bg-white border-b border-gray-200 shadow-sm">
+            <div className="bg-white border-b border-gray-2">
                 <div className="max-w-7xl mx-auto px-6 py-4">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900">Project Board</h1>
-                            <p className="text-sm text-gray-600 mt-1">Manage tasks and track progress across projects</p>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                            <Select value={selectedProject} onValueChange={setSelectedProject}>
-                                <SelectTrigger className="w-full sm:w-[180px]">
-                                    <SelectValue placeholder="All Projects" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Projects</SelectItem>
-                                    {mockProjects.map((project) => (
-                                        <SelectItem key={project.id} value={project.id}>
-                                            {project.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                            <Select value={selectedUser} onValueChange={setSelectedUser}>
-                                <SelectTrigger className="w-full sm:w-[180px]">
-                                    <SelectValue placeholder="All Users" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Users</SelectItem>
-                                    {mockUsers.map((user) => (
-                                        <SelectItem key={user.id} value={user.id}>
-                                            <div className="flex items-center gap-2">
-                                                <Avatar className="h-5 w-5">
-                                                    <AvatarFallback className={cn("text-xs text-white", user.color)}>
-                                                        {user.initials}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                {user.name}
-                                            </div>
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
+                    <h1 className="text-2xl font-bold text-gray-900">Kanban Board</h1>
                 </div>
             </div>
 
-            {/* Edit Task Modal */}
             {editTask && (
                 <Dialog open={!!editTask} onOpenChange={() => setEditTask(null)}>
                     <DialogContent className="sm:max-w-[425px]">
@@ -528,33 +544,33 @@ const KanbanBoard: React.FC = () => {
                             />
                             <Input
                                 placeholder="Description"
-                                value={editTask.description}
+                                value={editTask.description || ''}
                                 onChange={(e) => setEditTask({ ...editTask, description: e.target.value })}
                             />
                             <Select
-                                value={editTask.assigneeId}
-                                onValueChange={(value) => setEditTask({ ...editTask, assigneeId: value })}
+                                value={editTask.user_id?.toString() || ''}
+                                onValueChange={(value) => setEditTask({ ...editTask, user_id: parseInt(value) })}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Assign to..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {mockUsers.map((user) => (
-                                        <SelectItem key={user.id} value={user.id}>
+                                    {users.map((user) => (
+                                        <SelectItem key={user.id} value={user.id.toString()}>
                                             <div className="flex items-center gap-2">
                                                 <Avatar className="h-5 w-5">
-                                                    <AvatarFallback className={cn("text-xs text-white", user.color)}>
+                                                    <AvatarFallback className="text-xs text-white bg-blue-500">
                                                         {user.initials}
                                                     </AvatarFallback>
                                                 </Avatar>
-                                                {user.name}
+                                                {user.first_name} {user.last_name}
                                             </div>
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                             <Select
-                                value={editTask.priority}
+                                value={editTask.priority || 'medium'}
                                 onValueChange={(value: 'low' | 'medium' | 'high' | 'urgent') => setEditTask({ ...editTask, priority: value })}
                             >
                                 <SelectTrigger>
@@ -563,23 +579,8 @@ const KanbanBoard: React.FC = () => {
                                 <SelectContent>
                                     <SelectItem value="low">🔵 Low Priority</SelectItem>
                                     <SelectItem value="medium">🟡 Medium Priority</SelectItem>
-                                    <SelectItem value="high">🟠 High Priority</SelectItem>
+                                    <SelectItem value="high">🟢 High Priority</SelectItem>
                                     <SelectItem value="urgent">🔴 Urgent</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Select
-                                value={editTask.projectId}
-                                onValueChange={(value) => setEditTask({ ...editTask, projectId: value })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select project..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {mockProjects.map((project) => (
-                                        <SelectItem key={project.id} value={project.id}>
-                                            {project.name}
-                                        </SelectItem>
-                                    ))}
                                 </SelectContent>
                             </Select>
                             <Popover>
@@ -588,18 +589,18 @@ const KanbanBoard: React.FC = () => {
                                         variant="outline"
                                         className={cn(
                                             "w-full justify-start text-left font-normal",
-                                            !editTask.dueDate && "text-muted-foreground"
+                                            !editTask.due_date && 'text-muted-foreground'
                                         )}
                                     >
                                         <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {editTask.dueDate ? format(new Date(editTask.dueDate), "PPP") : <span>Pick a due date</span>}
+                                        {editTask.due_date ? format(new Date(editTask.due_date), 'PPP') : <span>Pick a due date</span>}
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
                                     <CalendarPicker
                                         mode="single"
-                                        selected={editTask.dueDate ? new Date(editTask.dueDate) : undefined}
-                                        onSelect={(date) => setEditTask({ ...editTask, dueDate: date?.toISOString() })}
+                                        selected={editTask.due_date ? new Date(editTask.due_date) : undefined}
+                                        onSelect={(date) => setEditTask({ ...editTask, due_date: date?.toISOString() })}
                                         initialFocus
                                     />
                                 </PopoverContent>
@@ -607,7 +608,7 @@ const KanbanBoard: React.FC = () => {
                             <div className="space-y-2">
                                 <div className="font-medium text-xs text-gray-700">Tags</div>
                                 <div className="flex flex-wrap gap-1 mb-2">
-                                    {editTask.tags.map((tag) => (
+                                    {editTask.tags?.map((tag) => (
                                         <Badge
                                             key={tag.name}
                                             className={cn("text-xs cursor-pointer", tag.color)}
@@ -656,7 +657,7 @@ const KanbanBoard: React.FC = () => {
                             <Button variant="outline" onClick={() => setEditTask(null)}>
                                 Cancel
                             </Button>
-                            <Button onClick={handleEditTask} disabled={!editTask.title.trim() || !editTask.assigneeId}>
+                            <Button onClick={handleEditTask} disabled={!editTask.title.trim() || !editTask.user_id}>
                                 Save
                             </Button>
                         </DialogFooter>
@@ -664,7 +665,6 @@ const KanbanBoard: React.FC = () => {
                 </Dialog>
             )}
 
-            {/* Delete Confirmation Modal */}
             <Dialog open={!!deleteTaskId} onOpenChange={() => setDeleteTaskId(null)}>
                 <DialogContent>
                     <DialogHeader>
@@ -684,12 +684,11 @@ const KanbanBoard: React.FC = () => {
                 </DialogContent>
             </Dialog>
 
-            {/* Board */}
             <div className="p-6">
                 <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                     <div className="flex gap-6 overflow-x-auto pb-4 min-h-[calc(100vh-200px)]">
                         {columns.map((column) => {
-                            const columnTasks = filteredTasks.filter((task) => task.status === column.id);
+                            const columnTasks = columnTasksMap[column.id];
                             const isOverLimit = column.limit && columnTasks.length >= column.limit;
 
                             return (
@@ -703,15 +702,14 @@ const KanbanBoard: React.FC = () => {
                                     <CardHeader className="pb-3">
                                         <CardTitle className="flex justify-between items-center">
                                             <div className="flex items-center gap-2">
-                                                <span className="text-sm font-semibold text-gray-700">
-                                                    {column.title}
-                                                </span>
+                        <span className="text-sm font-semibold text-gray-700">
+                          {column.title}
+                        </span>
                                                 <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
-                                                    {columnTasks.length}
+                                                    {getColumnTaskCount(column.id)}
                                                     {column.limit && `/${column.limit}`}
                                                 </Badge>
                                             </div>
-
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button variant="ghost" size="icon" className="h-6 w-6">
@@ -736,15 +734,15 @@ const KanbanBoard: React.FC = () => {
                                                                 <SelectValue placeholder="Assign to..." />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                {mockUsers.map((user) => (
-                                                                    <SelectItem key={user.id} value={user.id}>
+                                                                {users.map((user) => (
+                                                                    <SelectItem key={user.id} value={user.id.toString()}>
                                                                         <div className="flex items-center gap-2">
                                                                             <Avatar className="h-5 w-5">
-                                                                                <AvatarFallback className={cn("text-xs text-white", user.color)}>
+                                                                                <AvatarFallback className="text-xs text-white bg-blue-500">
                                                                                     {user.initials}
                                                                                 </AvatarFallback>
                                                                             </Avatar>
-                                                                            {user.name}
+                                                                            {user.first_name} {user.last_name}
                                                                         </div>
                                                                     </SelectItem>
                                                                 ))}
@@ -757,20 +755,8 @@ const KanbanBoard: React.FC = () => {
                                                             <SelectContent>
                                                                 <SelectItem value="low">🔵 Low Priority</SelectItem>
                                                                 <SelectItem value="medium">🟡 Medium Priority</SelectItem>
-                                                                <SelectItem value="high">🟠 High Priority</SelectItem>
+                                                                <SelectItem value="high">🟢 High Priority</SelectItem>
                                                                 <SelectItem value="urgent">🔴 Urgent</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                        <Select value={selectedProject} onValueChange={setSelectedProject}>
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Select project..." />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {mockProjects.map((project) => (
-                                                                    <SelectItem key={project.id} value={project.id}>
-                                                                        {project.name}
-                                                                    </SelectItem>
-                                                                ))}
                                                             </SelectContent>
                                                         </Select>
                                                         <Popover>
@@ -850,28 +836,30 @@ const KanbanBoard: React.FC = () => {
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className="pt-0">
-                                        <SortableContext
-                                            items={columnTasks.map((task) => task.id)}
-                                            strategy={verticalListSortingStrategy}
-                                        >
-                                            <div className="space-y-2 min-h-[400px]">
-                                                {columnTasks.map((task) => (
-                                                    <SortableTask
-                                                        key={task.id}
-                                                        task={task}
-                                                        columnId={column.id}
-                                                        onDelete={confirmDeleteTask}
-                                                        onEdit={setEditTask}
-                                                    />
-                                                ))}
-                                                {columnTasks.length === 0 && (
-                                                    <div className="flex flex-col items-center justify-center h-32 text-gray-400">
-                                                        <div className="text-2xl mb-2">📋</div>
-                                                        <p className="text-sm">No tasks yet</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </SortableContext>
+                                        <DroppableColumn id={column.id}>
+                                            <SortableContext
+                                                items={columnTasks.map((task) => task.id)}
+                                                strategy={verticalListSortingStrategy}
+                                            >
+                                                <div className="space-y-2 min-h-[400px]">
+                                                    {columnTasks.map((task) => (
+                                                        <SortableTask
+                                                            key={task.id}
+                                                            task={task}
+                                                            columnId={column.id}
+                                                            onDelete={confirmDeleteTask}
+                                                            onEdit={setEditTask}
+                                                        />
+                                                    ))}
+                                                    {columnTasks.length === 0 && (
+                                                        <div className="flex flex-col items-center h-32 text-gray-400">
+                                                            <div className="text-2xl mb-2">📋</div>
+                                                            <p className="text-sm">No tasks yet</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </SortableContext>
+                                        </DroppableColumn>
                                     </CardContent>
                                 </Card>
                             );

@@ -18,13 +18,16 @@ import PublicRoute from '@/router/components/PublicRoute';
 import ProtectedRoute from '@/router/components/ProtectedRoute';
 import { Provider } from 'react-redux';
 import store from '@/store/store.ts';
-import KanbanBoard from "@/components/kanabanBoard/kanbanBoard.tsx";
+import { Toaster } from 'react-hot-toast';
+import KanbanPage from "@/pages/KanabanPage.tsx";
 
 function App() {
   return (
       <Provider store={store}>
+        <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
         <Router>
           <Routes>
+
             {/* Public Marketing Pages */}
             <Route element={<GuestLayout />}>
               <Route path="/" element={<LandingPage />} />
@@ -39,7 +42,7 @@ function App() {
             {/* Auth Pages - Only accessible when NOT authenticated */}
             <Route element={<PublicRoute />}>
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/register" element={<RegisterPage />} />s
               <Route path="/verify-email" element={<VerifyEmailPage />} />
             </Route>
 
@@ -49,6 +52,7 @@ function App() {
 
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/chat" element={<ChatPage />} />
+                <Route path="/kanban/:projectId" element={<KanbanPage />} />
               </Route>
             </Route>
 

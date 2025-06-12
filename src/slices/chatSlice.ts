@@ -34,8 +34,8 @@ export const postMessage = createAsyncThunk('chat/postMessage', async ({ chatroo
     return await chatService.sendMessage(chatroomId, content);
 });
 
-export const createChatroom = createAsyncThunk('chat/createChatroom', async (name: string) => {
-    return await chatService.createChatroom(name);
+export const createChatroom = createAsyncThunk('chat/createChatroom', async (data: any) => {
+    return await chatService.createChatroom(data);
 });
 
 // Chat slice
