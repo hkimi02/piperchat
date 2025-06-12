@@ -4,8 +4,11 @@ import { useSelector } from 'react-redux';
 import AuthenticatedNavbar from '@/components/layout/AuthenticatedNavbar';
 import echo from '@/services/echo';
 import type { RootState } from '@/store/store';
+import { useCallStatus } from '@/hooks/useCallStatus';
 
 const AuthenticatedLayout = () => {
+    useCallStatus();
+
     const { user } = useSelector((state: RootState) => state.auth);
 
     useEffect(() => {

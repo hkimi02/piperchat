@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchMessages, postMessage, addMessage } from '@/slices/chatSlice';
+import { fetchMessages, postMessage, addMessage, startCall } from '@/slices/chatSlice';
 import type { AppDispatch, RootState } from '@/store/store';
 import type { Message } from '@/pages/Chat/data';
 import echo from '@/services/echo';
@@ -8,12 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send } from 'lucide-react';
+import { Send, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import CallView from './CallView';
 
 const ChatArea = () => {
     const dispatch = useDispatch<AppDispatch>();
-    const { selectedChatroom, messages, loading } = useSelector((state: RootState) => state.chat);
+    const { selectedChatroom, messages, loading, isCallActive, activeCalls } = useSelector((state: RootState) => state.chat);
     const { user: currentUser } = useSelector((state: RootState) => state.auth);
     const [newMessage, setNewMessage] = useState('');
     const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -41,7 +42,13 @@ const ChatArea = () => {
         if (scrollAreaRef.current) {
             scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
         }
-    }, [messages]);
+        }, [messages]);
+
+    const handleStartCall = () => {
+        if (selectedChatroom) {
+            dispatch(startCall());
+        }
+    };
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
@@ -59,10 +66,24 @@ const ChatArea = () => {
         return <div className="flex items-center justify-center h-full">Loading messages...</div>;
     }
 
+        const isCallOngoingInRoom = selectedChatroom && activeCalls[selectedChatroom.id];
+
     return (
-        <div className="flex flex-col h-full">
-            <div className="p-4 border-b">
+        <div className="relative flex flex-col h-full">
+            {isCallActive && <CallView />}
+            <div className="flex items-center justify-between p-4 border-b">
                 <h2 className="text-lg font-semibold">{selectedChatroom.name}</h2>
+                {!isCallActive && (
+                    isCallOngoingInRoom ? (
+                        <Button onClick={handleStartCall}>
+                            <Phone className="mr-2 h-4 w-4" /> Join Call
+                        </Button>
+                    ) : (
+                        <Button onClick={handleStartCall} size="icon" variant="outline">
+                            <Phone className="h-5 w-5" />
+                        </Button>
+                    )
+                )}
             </div>
             <ScrollArea className="flex-1 h-0 p-4" ref={scrollAreaRef}>
                 <div className="space-y-4">

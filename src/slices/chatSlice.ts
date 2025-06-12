@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import * as chatService from '@/services/Chat/chatService';
-import type { Chatroom, Message } from '@/pages/Chat/data';
+import type { Chatroom, Message, Participant } from '@/pages/Chat/data';
 
 // Define the shape of the chat state
 interface ChatState {
@@ -10,7 +10,18 @@ interface ChatState {
     selectedChatroom: Chatroom | null;
     loading: boolean;
     error: string | null;
+    // Call state
+    isCallActive: boolean; // Is the current user in a call UI?
+    activeCalls: { [chatroomId: number]: boolean }; // Is a call ongoing in a specific chatroom?
+    participants: Participant[];
+    // We use `any` for MediaStream to avoid issues in non-browser environments.
+    localStream: any | null;
+    remoteStreams: { [userId: number]: any };
+    isVideoEnabled: boolean;
+    isScreenSharing: boolean;
 }
+
+
 
 // Initial state
 const initialState: ChatState = {
@@ -19,6 +30,14 @@ const initialState: ChatState = {
     selectedChatroom: null,
     loading: false,
     error: null,
+    // Call state
+    isCallActive: false,
+    activeCalls: {},
+    participants: [],
+    localStream: null,
+    remoteStreams: {},
+    isVideoEnabled: false,
+    isScreenSharing: false,
 };
 
 // Async thunks for chat operations
@@ -54,7 +73,61 @@ const chatSlice = createSlice({
             state.selectedChatroom = action.payload;
         },
         addMessage: (state, action: PayloadAction<Message>) => {
-            state.messages.push(action.payload);
+            // Avoid adding duplicate messages that might come from the echo
+            if (!state.messages.find(m => m.id === action.payload.id)) {
+                state.messages.push(action.payload);
+            }
+        },
+        setCallStatus(state, action: PayloadAction<{ chatroomId: number; isActive: boolean }>) {
+            state.activeCalls[action.payload.chatroomId] = action.payload.isActive;
+        },
+        // Call reducers
+        startCall: (state) => {
+            state.isCallActive = true;
+        },
+        endCall(state) {
+            state.isCallActive = false;
+            state.participants = [];
+            state.localStream = null;
+            state.remoteStreams = {};
+            state.isVideoEnabled = false;
+            state.isScreenSharing = false;
+        },
+        toggleVideo(state, action: PayloadAction<boolean>) {
+            state.isVideoEnabled = action.payload;
+        },
+        setScreenSharing(state, action: PayloadAction<boolean>) {
+            state.isScreenSharing = action.payload;
+        },
+        updateParticipantStream(state, action: PayloadAction<{ userId: number; streamType: 'camera' | 'screen' }>) {
+            const participant = state.participants.find(p => p.id === action.payload.userId);
+            if (participant) {
+                participant.streamType = action.payload.streamType;
+            }
+        },
+        setParticipants: (state, action: PayloadAction<Participant[]>) => {
+            state.participants = action.payload;
+        },
+        addParticipant: (state, action: PayloadAction<Participant>) => {
+            if (!state.participants.find(p => p.id === action.payload.id)) {
+                state.participants.push(action.payload);
+            }
+        },
+        removeParticipant: (state, action: PayloadAction<number>) => { // by user ID
+            state.participants = state.participants.filter(p => p.id !== action.payload);
+            delete state.remoteStreams[action.payload];
+        },
+        setLocalStream: (state, action: PayloadAction<any | null>) => {
+            state.localStream = action.payload;
+        },
+        addRemoteStream: (state, action: PayloadAction<{ userId: number; stream: any }>) => {
+            state.remoteStreams = {
+                ...state.remoteStreams,
+                [action.payload.userId]: action.payload.stream,
+            };
+        },
+        removeRemoteStream: (state, action: PayloadAction<number>) => { // by user ID
+            delete state.remoteStreams[action.payload];
         },
     },
     extraReducers: (builder) => {
@@ -113,5 +186,20 @@ const chatSlice = createSlice({
     },
 });
 
-export const { selectChatroom, addMessage } = chatSlice.actions;
+export const {
+    selectChatroom,
+    addMessage,
+    setCallStatus,
+    startCall,
+    endCall,
+    toggleVideo,
+    setScreenSharing,
+    updateParticipantStream,
+    setParticipants,
+    addParticipant,
+    removeParticipant,
+    setLocalStream,
+    addRemoteStream,
+    removeRemoteStream,
+} = chatSlice.actions;
 export default chatSlice.reducer;
