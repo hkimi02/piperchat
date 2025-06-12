@@ -30,4 +30,5 @@ export interface Chatroom {
 export interface Participant {
     id: number;
     full_name: string;
+    streamType?: 'camera' | 'screen';
 }

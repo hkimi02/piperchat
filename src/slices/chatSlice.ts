@@ -16,7 +16,11 @@ interface ChatState {
     // We use `any` for MediaStream to avoid issues in non-browser environments.
     localStream: any | null;
     remoteStreams: { [userId: number]: any };
+    isVideoEnabled: boolean;
+    isScreenSharing: boolean;
 }
+
+
 
 // Initial state
 const initialState: ChatState = {
@@ -30,6 +34,8 @@ const initialState: ChatState = {
     participants: [],
     localStream: null,
     remoteStreams: {},
+    isVideoEnabled: false,
+    isScreenSharing: false,
 };
 
 // Async thunks for chat operations
@@ -74,11 +80,25 @@ const chatSlice = createSlice({
         startCall: (state) => {
             state.isCallActive = true;
         },
-        endCall: (state) => {
+        endCall(state) {
             state.isCallActive = false;
             state.participants = [];
             state.localStream = null;
             state.remoteStreams = {};
+            state.isVideoEnabled = false;
+            state.isScreenSharing = false;
+        },
+        toggleVideo(state, action: PayloadAction<boolean>) {
+            state.isVideoEnabled = action.payload;
+        },
+        setScreenSharing(state, action: PayloadAction<boolean>) {
+            state.isScreenSharing = action.payload;
+        },
+        updateParticipantStream(state, action: PayloadAction<{ userId: number; streamType: 'camera' | 'screen' }>) {
+            const participant = state.participants.find(p => p.id === action.payload.userId);
+            if (participant) {
+                participant.streamType = action.payload.streamType;
+            }
         },
         setParticipants: (state, action: PayloadAction<Participant[]>) => {
             state.participants = action.payload;
@@ -163,6 +183,9 @@ export const {
     addMessage,
     startCall,
     endCall,
+    toggleVideo,
+    setScreenSharing,
+    updateParticipantStream,
     setParticipants,
     addParticipant,
     removeParticipant,
