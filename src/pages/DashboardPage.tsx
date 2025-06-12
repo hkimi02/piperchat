@@ -126,12 +126,14 @@ const DashboardPage: React.FC = () => {
                     </div>
                 )}
             </div>
-            <div className="flex flex-1">
+            <div className="flex flex-1 overflow-hidden">
                 <ProjectList onSelectProject={setSelectedProject} />
-                <div className="flex-1 flex flex-col">
-                    <ChatLayout selectedProjectId={selectedProject?.id} />
+                <div className="flex-1 flex flex-col min-h-0">
+                    <div className="flex-1 h-full">
+                        <ChatLayout selectedProjectId={selectedProject?.id} />
+                    </div>
                     {selectedProject && (
-                        <div className="p-4 border-t">
+                        <div className="p-4 border-t h-48 overflow-y-auto bg-background">
                             <h3 className="font-semibold mb-2">Tasks</h3>
                             {selectedProject.tasks.length > 0 ? (
                                 <ul className="space-y-2">
@@ -144,8 +146,8 @@ const DashboardPage: React.FC = () => {
                                             {task.is_assigned && <span className="ml-2 text-green-600">Assigned to you</span>}
                                             {task.user && (
                                                 <span className="text-sm text-gray-500 ml-2">
-                          Assigned to {task.user.first_name} {task.user.last_name}
-                        </span>
+                                                    Assigned to {task.user.first_name} {task.user.last_name}
+                                                </span>
                                             )}
                                         </li>
                                     ))}

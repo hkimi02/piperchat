@@ -23,6 +23,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/store/store';
 import { findOrCreatePrivateChatroom } from '@/slices/chatSlice';
 import { useNavigate } from 'react-router-dom';
+import { selectChatroom } from '@/slices/chatSlice';
 
 
 interface User {
@@ -41,12 +42,13 @@ interface UserProfileProps {
 
 const UserProfile: React.FC<UserProfileProps> = ({ user, children, isOnline }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const navigate = useNavigate();
+      const navigate = useNavigate();
 
-  const handleMessage = async () => {
+    const handleMessage = async () => {
     try {
-      await dispatch(findOrCreatePrivateChatroom(user.id)).unwrap();
-      navigate('/chat');
+      const chatroom = await dispatch(findOrCreatePrivateChatroom(user.id)).unwrap();
+      dispatch(selectChatroom(chatroom));
+      navigate('/dashboard'); // Navigate to the dashboard, chat state will handle the rest
     } catch (error) {
       console.error('Failed to start private chat:', error);
     }
