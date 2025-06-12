@@ -5,7 +5,7 @@ import type { AppDispatch, RootState } from '@/store/store';
 import type { Chatroom } from '@/pages/Chat/data';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, Hash } from 'lucide-react';
+import { Plus, Hash, Users } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -84,11 +84,20 @@ const ChatroomList = ({ selectedProjectId }: { selectedProjectId?: number }) => 
         }
     };
 
+        const publicChatrooms = chatrooms.filter(c => c.type === 'organisation' || c.type === 'project');
+    const privateChatrooms = chatrooms.filter(c => c.type === 'private');
+
+    const getPrivateChatroomDisplayName = (chatroom: Chatroom) => {
+        if (chatroom.type !== 'private' || !chatroom.users || !user) return chatroom.name;
+        const otherUser = chatroom.users.find(u => u.id !== user.id);
+        return otherUser ? otherUser.full_name : chatroom.name;
+    };
+
     const filteredChatrooms = selectedProjectId
-        ? chatrooms.filter(
+        ? publicChatrooms.filter(
             (chatroom) => chatroom.type === 'project' && chatroom.project_id === selectedProjectId
         )
-        : chatrooms.filter((chatroom) => chatroom.type === 'organisation');
+        : publicChatrooms.filter((chatroom) => chatroom.type === 'organisation');
 
     if (loading) return <div>Loading chatrooms...</div>;
     if (error) return <div>Error: {error}</div>;
@@ -182,6 +191,7 @@ const ChatroomList = ({ selectedProjectId }: { selectedProjectId?: number }) => 
                 </div>
                 <ScrollArea className="h-[calc(100vh-150px)]">
                     <nav className="flex flex-col gap-1">
+                        <h3 className="font-semibold text-sm text-muted-foreground px-2 mt-4 mb-2">Channels</h3>
                         {filteredChatrooms.length === 0 ? (
                             <div className="text-sm text-muted-foreground text-center py-4">
                                 No channels available
@@ -197,6 +207,26 @@ const ChatroomList = ({ selectedProjectId }: { selectedProjectId?: number }) => 
                                 >
                                     <Hash className="h-4 w-4 flex-shrink-0" />
                                     <span className="truncate">{chatroom.name}</span>
+                                </Button>
+                            ))
+                        )}
+                        
+                        <h3 className="font-semibold text-sm text-muted-foreground px-2 mt-4 mb-2">Direct Messages</h3>
+                        {privateChatrooms.length === 0 ? (
+                            <div className="text-sm text-muted-foreground text-center py-4">
+                                No private messages
+                            </div>
+                        ) : (
+                            privateChatrooms.map((chatroom: Chatroom) => (
+                                <Button
+                                    key={chatroom.id}
+                                    variant={selectedChatroom?.id === chatroom.id ? 'secondary' : 'ghost'}
+                                    className="w-full justify-start gap-2 text-left"
+                                    onClick={() => handleSelectChatroom(chatroom)}
+                                    title={getPrivateChatroomDisplayName(chatroom)}
+                                >
+                                    <Users className="h-4 w-4 flex-shrink-0" />
+                                    <span className="truncate">{getPrivateChatroomDisplayName(chatroom)}</span>
                                 </Button>
                             ))
                         )}

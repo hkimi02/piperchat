@@ -17,22 +17,25 @@ const ChatArea = () => {
     const { user: currentUser } = useSelector((state: RootState) => state.auth);
     const [newMessage, setNewMessage] = useState('');
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const chatroomId = selectedChatroom?.id;
 
     useEffect(() => {
-        if (selectedChatroom) {
-            dispatch(fetchMessages(String(selectedChatroom.id)));
+        if (chatroomId) {
+            dispatch(fetchMessages(String(chatroomId)));
 
-            const channel = echo.private(`chat.${selectedChatroom.id}`);
+            const channel = echo.private(`chat.${chatroomId}`);
             channel.listen('.MessageSent', (data: { message: Message }) => {
-                dispatch(addMessage(data.message));
+                if (data.message.chatroom_id === chatroomId) {
+                    dispatch(addMessage(data.message));
+                }
             });
 
             return () => {
-                channel.stopListening('MessageSent');
-                echo.leave(`chat.${selectedChatroom.id}`);
+                channel.stopListening('.MessageSent');
+                echo.leave(`chat.${chatroomId}`);
             };
         }
-    }, [selectedChatroom, dispatch]);
+    }, [chatroomId, dispatch]);
 
     useEffect(() => {
         if (scrollAreaRef.current) {

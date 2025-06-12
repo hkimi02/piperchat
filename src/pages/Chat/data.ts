@@ -21,4 +21,7 @@ export interface Chatroom {
     id: number;
     name: string;
     description: string;
+    type: 'organisation' | 'project' | 'private';
+    project_id?: number;
+    users?: User[];
 }

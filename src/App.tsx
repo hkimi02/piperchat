@@ -13,7 +13,7 @@ import LoginPage from '@/pages/auth/LoginPage';
 import RegisterPage from '@/pages/auth/RegisterPage';
 import VerifyEmailPage from '@/pages/auth/VerifyEmailPage';
 import DashboardPage from '@/pages/DashboardPage';
-import ChatPage from '@/pages/Chat/ChatPage';
+
 import PublicRoute from '@/router/components/PublicRoute';
 import ProtectedRoute from '@/router/components/ProtectedRoute';
 import { Provider } from 'react-redux';
@@ -51,7 +51,7 @@ function App() {
               <Route element={<AuthenticatedLayout />}>
 
                 <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/chat" element={<ChatPage />} />
+
                 <Route path="/kanban/:projectId" element={<KanbanPage />} />
               </Route>
             </Route>

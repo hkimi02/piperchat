@@ -23,3 +23,9 @@ export const createChatroom = async (data: any) => {
     const response = await apiClient.post('/chatrooms',data);
     return response.data;
 };
+
+// Find or create a private chatroom with another user
+export const findOrCreatePrivateChatroom = async (userId: number) => {
+    const response = await apiClient.post('/chatrooms/private/find-or-create', { userId });
+    return response.data;
+};
