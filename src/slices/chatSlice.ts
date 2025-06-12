@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import * as chatService from '@/services/Chat/chatService';
-import type { Chatroom, Message } from '@/pages/Chat/data';
+import type { Chatroom, Message, Participant } from '@/pages/Chat/data';
 
 // Define the shape of the chat state
 interface ChatState {
@@ -10,6 +10,12 @@ interface ChatState {
     selectedChatroom: Chatroom | null;
     loading: boolean;
     error: string | null;
+    // Call state
+    isCallActive: boolean;
+    participants: Participant[];
+    // We use `any` for MediaStream to avoid issues in non-browser environments.
+    localStream: any | null;
+    remoteStreams: { [userId: number]: any };
 }
 
 // Initial state
@@ -19,6 +25,11 @@ const initialState: ChatState = {
     selectedChatroom: null,
     loading: false,
     error: null,
+    // Call state
+    isCallActive: false,
+    participants: [],
+    localStream: null,
+    remoteStreams: {},
 };
 
 // Async thunks for chat operations
@@ -54,7 +65,41 @@ const chatSlice = createSlice({
             state.selectedChatroom = action.payload;
         },
         addMessage: (state, action: PayloadAction<Message>) => {
-            state.messages.push(action.payload);
+            // Avoid adding duplicate messages that might come from the echo
+            if (!state.messages.find(m => m.id === action.payload.id)) {
+                state.messages.push(action.payload);
+            }
+        },
+        // Call reducers
+        startCall: (state) => {
+            state.isCallActive = true;
+        },
+        endCall: (state) => {
+            state.isCallActive = false;
+            state.participants = [];
+            state.localStream = null;
+            state.remoteStreams = {};
+        },
+        setParticipants: (state, action: PayloadAction<Participant[]>) => {
+            state.participants = action.payload;
+        },
+        addParticipant: (state, action: PayloadAction<Participant>) => {
+            if (!state.participants.find(p => p.id === action.payload.id)) {
+                state.participants.push(action.payload);
+            }
+        },
+        removeParticipant: (state, action: PayloadAction<number>) => { // by user ID
+            state.participants = state.participants.filter(p => p.id !== action.payload);
+            delete state.remoteStreams[action.payload];
+        },
+        setLocalStream: (state, action: PayloadAction<any | null>) => {
+            state.localStream = action.payload;
+        },
+        addRemoteStream: (state, action: PayloadAction<{ userId: number; stream: any }>) => {
+            state.remoteStreams[action.payload.userId] = action.payload.stream;
+        },
+        removeRemoteStream: (state, action: PayloadAction<number>) => { // by user ID
+            delete state.remoteStreams[action.payload];
         },
     },
     extraReducers: (builder) => {
@@ -113,5 +158,16 @@ const chatSlice = createSlice({
     },
 });
 
-export const { selectChatroom, addMessage } = chatSlice.actions;
+export const {
+    selectChatroom,
+    addMessage,
+    startCall,
+    endCall,
+    setParticipants,
+    addParticipant,
+    removeParticipant,
+    setLocalStream,
+    addRemoteStream,
+    removeRemoteStream,
+} = chatSlice.actions;
 export default chatSlice.reducer;
