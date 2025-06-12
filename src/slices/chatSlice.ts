@@ -11,7 +11,8 @@ interface ChatState {
     loading: boolean;
     error: string | null;
     // Call state
-    isCallActive: boolean;
+    isCallActive: boolean; // Is the current user in a call UI?
+    activeCalls: { [chatroomId: number]: boolean }; // Is a call ongoing in a specific chatroom?
     participants: Participant[];
     // We use `any` for MediaStream to avoid issues in non-browser environments.
     localStream: any | null;
@@ -31,6 +32,7 @@ const initialState: ChatState = {
     error: null,
     // Call state
     isCallActive: false,
+    activeCalls: {},
     participants: [],
     localStream: null,
     remoteStreams: {},
@@ -75,6 +77,9 @@ const chatSlice = createSlice({
             if (!state.messages.find(m => m.id === action.payload.id)) {
                 state.messages.push(action.payload);
             }
+        },
+        setCallStatus(state, action: PayloadAction<{ chatroomId: number; isActive: boolean }>) {
+            state.activeCalls[action.payload.chatroomId] = action.payload.isActive;
         },
         // Call reducers
         startCall: (state) => {
@@ -184,6 +189,7 @@ const chatSlice = createSlice({
 export const {
     selectChatroom,
     addMessage,
+    setCallStatus,
     startCall,
     endCall,
     toggleVideo,

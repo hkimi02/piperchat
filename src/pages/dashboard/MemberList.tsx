@@ -21,9 +21,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/store/store';
-import { findOrCreatePrivateChatroom } from '@/slices/chatSlice';
+import { findOrCreatePrivateChatroom, selectChatroom, startCall } from '@/slices/chatSlice';
 import { useNavigate } from 'react-router-dom';
-import { selectChatroom } from '@/slices/chatSlice';
 
 
 interface User {
@@ -42,9 +41,9 @@ interface UserProfileProps {
 
 const UserProfile: React.FC<UserProfileProps> = ({ user, children, isOnline }) => {
   const dispatch = useDispatch<AppDispatch>();
-      const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const handleMessage = async () => {
+  const handleMessage = async () => {
     try {
       const chatroom = await dispatch(findOrCreatePrivateChatroom(user.id)).unwrap();
       dispatch(selectChatroom(chatroom));
@@ -53,6 +52,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, children, isOnline }) =
       console.error('Failed to start private chat:', error);
     }
   };
+
+  const handleCall = async () => {
+    try {
+      const chatroom = await dispatch(findOrCreatePrivateChatroom(user.id)).unwrap();
+      dispatch(selectChatroom(chatroom));
+      dispatch(startCall());
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Failed to initiate call:', error);
+    }
+  };
+
   return (
       <Popover>
         <PopoverTrigger asChild>{children}</PopoverTrigger>
@@ -75,7 +86,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, children, isOnline }) =
               <Button variant="outline" onClick={handleMessage}>
                 <MessageSquare className="mr-2 h-4 w-4" /> Message
               </Button>
-              <Button>
+              <Button onClick={handleCall}>
                 <Phone className="mr-2 h-4 w-4" /> Appeler
               </Button>
             </div>
