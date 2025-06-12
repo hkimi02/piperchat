@@ -111,7 +111,7 @@ export const useWebRTC = () => {
         // Cleanup on unmount
         return () => {
             signalingChannel.stopListening('.SignalingEvent');
-            signalingChannel.leave();
+            echo.leave(signalingChannel.name);
             Object.values(peerConnections.current).forEach(pc => pc.close());
             peerConnections.current = {};
         };
