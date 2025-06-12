@@ -116,7 +116,10 @@ const chatSlice = createSlice({
             state.localStream = action.payload;
         },
         addRemoteStream: (state, action: PayloadAction<{ userId: number; stream: any }>) => {
-            state.remoteStreams[action.payload.userId] = action.payload.stream;
+            state.remoteStreams = {
+                ...state.remoteStreams,
+                [action.payload.userId]: action.payload.stream,
+            };
         },
         removeRemoteStream: (state, action: PayloadAction<number>) => { // by user ID
             delete state.remoteStreams[action.payload];

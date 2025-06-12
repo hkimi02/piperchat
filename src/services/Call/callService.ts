@@ -7,7 +7,7 @@ const callService = {
      * @param payload The WebRTC signaling payload (e.g., offer, answer, ICE candidate).
      */
     sendSignal: (chatroomId: string, payload: any): Promise<any> => {
-        return apiClient.post(`/calls/signal/${chatroomId}`, { payload });
+        return apiClient.post(`/calls/signal/${chatroomId}`, payload);
     },
 };
 

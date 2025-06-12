@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/store/store';
-import { endCall, setParticipants, addParticipant, removeParticipant, toggleVideo, setScreenSharing } from '@/slices/chatSlice';
-import echo from '@/services/echo';
+import { endCall, toggleVideo, setScreenSharing } from '@/slices/chatSlice';
 import { Button } from '@/components/ui/button';
 import { PhoneOff, Mic, MicOff, Video, VideoOff, ScreenShare, ScreenShareOff } from 'lucide-react';
 import StreamPlayer from './StreamPlayer';
@@ -12,31 +11,12 @@ const CallView = () => {
     useWebRTC(); // This hook manages all WebRTC logic
 
     const dispatch = useDispatch<AppDispatch>();
-    const { selectedChatroom, participants, localStream, remoteStreams, isVideoEnabled, isScreenSharing } = useSelector((state: RootState) => state.chat);
+    const { participants, localStream, remoteStreams, isVideoEnabled, isScreenSharing } = useSelector((state: RootState) => state.chat);
     const { user: currentUser } = useSelector((state: RootState) => state.auth);
     const [isMuted, setIsMuted] = useState(false);
     const [isCameraOff, setIsCameraOff] = useState(!isVideoEnabled);
 
-    useEffect(() => {
-        if (selectedChatroom) {
-            const channel = echo.join(`call.${selectedChatroom.id}`);
 
-            channel
-                .here((users: any[]) => {
-                    dispatch(setParticipants(users));
-                })
-                .joining((user: any) => {
-                    dispatch(addParticipant(user));
-                })
-                .leaving((user: any) => {
-                    dispatch(removeParticipant(user.id));
-                });
-
-            return () => {
-                echo.leave(`call.${selectedChatroom.id}`);
-            };
-        }
-    }, [selectedChatroom, dispatch]);
 
     const handleEndCall = () => {
         dispatch(endCall());
