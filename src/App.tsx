@@ -16,6 +16,7 @@ import PublicRoute from '@/router/components/PublicRoute';
 import ProtectedRoute from '@/router/components/ProtectedRoute';
 import { Provider } from 'react-redux';
 import store from '@/store/store.ts';
+import KanbanBoard from "@/components/kanabanBoard/kanbanBoard.tsx";
 
 function App() {
   return (
@@ -43,7 +44,7 @@ function App() {
             {/* Protected Routes - Only accessible when authenticated */}
             <Route element={<ProtectedRoute role="ADMIN" />}>
               <Route element={<AuthenticatedLayout />}>
-                <Route path="/dashboard" element={<div>Authenticated Dashboard (Placeholder)</div>} />
+                <Route path="/dashboard" element={<div><KanbanBoard/></div>} />
               </Route>
             </Route>
 
