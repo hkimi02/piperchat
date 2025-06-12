@@ -19,7 +19,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '@/store/store';
+import { findOrCreatePrivateChatroom } from '@/slices/chatSlice';
+import { useNavigate } from 'react-router-dom';
 
 
 interface User {
@@ -37,6 +40,17 @@ interface UserProfileProps {
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({ user, children, isOnline }) => {
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+
+  const handleMessage = async () => {
+    try {
+      await dispatch(findOrCreatePrivateChatroom(user.id)).unwrap();
+      navigate('/chat');
+    } catch (error) {
+      console.error('Failed to start private chat:', error);
+    }
+  };
   return (
       <Popover>
         <PopoverTrigger asChild>{children}</PopoverTrigger>
@@ -56,7 +70,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, children, isOnline }) =
               <p className="text-sm text-muted-foreground">{user.email}</p>
             </div>
             <div className="flex gap-4 mt-4">
-              <Button variant="outline">
+              <Button variant="outline" onClick={handleMessage}>
                 <MessageSquare className="mr-2 h-4 w-4" /> Message
               </Button>
               <Button>

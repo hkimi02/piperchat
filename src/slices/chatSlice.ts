@@ -38,6 +38,13 @@ export const createChatroom = createAsyncThunk('chat/createChatroom', async (dat
     return await chatService.createChatroom(data);
 });
 
+export const findOrCreatePrivateChatroom = createAsyncThunk(
+    'chat/findOrCreatePrivateChatroom',
+    async (userId: number) => {
+        return await chatService.findOrCreatePrivateChatroom(userId);
+    }
+);
+
 // Chat slice
 const chatSlice = createSlice({
     name: 'chat',
@@ -86,6 +93,22 @@ const chatSlice = createSlice({
             .addCase(createChatroom.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.error.message || 'Failed to create chatroom';
+            })
+            .addCase(findOrCreatePrivateChatroom.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(findOrCreatePrivateChatroom.fulfilled, (state, action: PayloadAction<Chatroom>) => {
+                const existingChatroom = state.chatrooms.find(c => c.id === action.payload.id);
+                if (!existingChatroom) {
+                    state.chatrooms.push(action.payload);
+                }
+                state.selectedChatroom = action.payload;
+                state.loading = false;
+            })
+            .addCase(findOrCreatePrivateChatroom.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message || 'Failed to find or create private chatroom';
             });
     },
 });
