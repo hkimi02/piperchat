@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Plus, Home } from 'lucide-react';
+import { Plus, Home, Users } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import {
   ContextMenu,
@@ -27,6 +27,7 @@ import {
 import toast from 'react-hot-toast';
 import projectService from '@/services/Projects/projectService';
 import { useSelector } from 'react-redux';
+import OrganisationManagementDialog from './components/OrganisationManagementDialog';
 
 interface User {
   id: number;
@@ -68,7 +69,9 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelectProject }) => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [newProject, setNewProject] = useState({ name: '', description: '' });
   const [updateProject, setUpdateProject] = useState({ name: '', description: '' });
+  const [isOrgManagementOpen, setIsOrgManagementOpen] = useState(false);
   const user = useSelector((state: RootState) => state.auth.user);
+  const isAdmin = user?.role === 'ADMIN';
 
   // Fetch projects
   useEffect(() => {
@@ -143,149 +146,183 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelectProject }) => {
     setIsUpdateDialogOpen(true);
   };
 
-  // Disable add/update for non-admins
-  const isAdmin = user?.role === 'ADMIN';
-
   return (
-      <TooltipProvider>
-        <div className="w-20 bg-muted/50 p-3 flex flex-col items-center gap-4 border-r">
-          <h2 className="font-bold text-lg sr-only">Projets</h2>
-          <div className="flex flex-col items-center gap-3">
-            <Button variant="ghost" size="icon">
-              <Home className="h-5 w-5" />
-            </Button>
-            <Separator className="my-1" />
-            {projects.map((project) => (
-                <Tooltip key={project.id}>
-                  <ContextMenu>
-                    <ContextMenuTrigger>
-                      <TooltipTrigger asChild>
-                        <Avatar
-                            className="cursor-pointer"
-                            onClick={() => onSelectProject(project)}
-                        >
-                          <AvatarFallback>{project.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                      </TooltipTrigger>
-                    </ContextMenuTrigger>
-                    {isAdmin && (
-                        <ContextMenuContent>
-                          <ContextMenuItem onClick={() => openUpdateDialog(project)}>
-                            Update Project
-                          </ContextMenuItem>
-                        </ContextMenuContent>
-                    )}
-                  </ContextMenu>
-                  <TooltipContent side="right" className="max-w-xs">
-                    <h3 className="font-semibold">{project.name}</h3>
-                    {project.tasks?.length > 0 ? (
-                        <ul className="mt-2 space-y-1">
-                          {project.tasks.map((task) => (
-                              <li
-                                  key={task.id}
-                                  className={`text-sm ${task.is_assigned ? 'text-green-600 font-medium' : ''}`}
-                              >
-                                {task.title} ({task.status})
-                                {task.is_assigned && ' (Assigned to you)'}
-                              </li>
-                          ))}
-                        </ul>
-                    ) : (
-                        <p className="text-sm text-muted-foreground">No tasks</p>
-                    )}
-                  </TooltipContent>
-                </Tooltip>
-            ))}
-            {isAdmin && (
-                <Button
+    <TooltipProvider>
+      <div className="relative h-full flex flex-col p-4 bg-gray-50 border-r">
+        <div className="flex flex-col items-center gap-3">
+          <Button variant="ghost" size="icon">
+            <Home className="h-5 w-5" />
+          </Button>
+          <Separator className="my-1" />
+          {projects.map((project) => (
+            <Tooltip key={project.id}>
+              <ContextMenu>
+                <ContextMenuTrigger>
+                  <TooltipTrigger asChild>
+                    <Avatar
+                      className="cursor-pointer"
+                      onClick={() => onSelectProject(project)}
+                    >
+                      <AvatarFallback>{project.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  </TooltipTrigger>
+                </ContextMenuTrigger>
+                {isAdmin && (
+                  <ContextMenuContent>
+                    <ContextMenuItem onClick={() => openUpdateDialog(project)}>
+                      Update Project
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                )}
+              </ContextMenu>
+              <TooltipContent side="right" className="max-w-xs">
+                <h3 className="font-semibold">{project.name}</h3>
+                {project.tasks?.length > 0 ? (
+                  <ul className="mt-2 space-y-1">
+                    {project.tasks.map((task) => (
+                      <li
+                        key={task.id}
+                        className={`text-sm ${
+                          task.is_assigned ? 'text-green-600 font-medium' : ''
+                        }`}
+                      >
+                        {task.title} ({task.status})
+                        {task.is_assigned && ' (Assigned to you)'}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No tasks</p>
+                )}
+              </TooltipContent>
+            </Tooltip>
+          ))}
+          {isAdmin && (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
                     variant="outline"
                     size="icon"
                     onClick={() => setIsAddDialogOpen(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-            )}
-          </div>
-
-          {/* Add Project Dialog */}
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Project</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                      id="name"
-                      value={newProject.name}
-                      onChange={(e) =>
-                          setNewProject({ ...newProject, name: e.target.value })
-                      }
-                      placeholder="Project name"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Input
-                      id="description"
-                      value={newProject.description}
-                      onChange={(e) =>
-                          setNewProject({ ...newProject, description: e.target.value })
-                      }
-                      placeholder="Project description (optional)"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddProject}>Save</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Update Project Dialog */}
-          <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Update Project</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="update-name">Name</Label>
-                  <Input
-                      id="update-name"
-                      value={updateProject.name}
-                      onChange={(e) =>
-                          setUpdateProject({ ...updateProject, name: e.target.value })
-                      }
-                      placeholder="Project name"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="update-description">Description</Label>
-                  <Input
-                      id="update-description"
-                      value={updateProject.description}
-                      onChange={(e) =>
-                          setUpdateProject({ ...updateProject, description: e.target.value })
-                      }
-                      placeholder="Project description (optional)"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsUpdateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleUpdateProject}>Save</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Add Project</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setIsOrgManagementOpen(true)}
+                  >
+                    <Users className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Manage Organisation</p>
+                </TooltipContent>
+              </Tooltip>
+            </>
+          )}
         </div>
-      </TooltipProvider>
+
+        {/* Add Project Dialog */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Project</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={newProject.name}
+                  onChange={(e) =>
+                    setNewProject({ ...newProject, name: e.target.value })
+                  }
+                  placeholder="Project name"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  id="description"
+                  value={newProject.description}
+                  onChange={(e) =>
+                    setNewProject({ ...newProject, description: e.target.value })
+                  }
+                  placeholder="Project description (optional)"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddProject}>Save</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Update Project Dialog */}
+        <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Update Project</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="update-name">Name</Label>
+                <Input
+                  id="update-name"
+                  value={updateProject.name}
+                  onChange={(e) =>
+                    setUpdateProject({ ...updateProject, name: e.target.value })
+                  }
+                  placeholder="Project name"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="update-description">Description</Label>
+                <Input
+                  id="update-description"
+                  value={updateProject.description}
+                  onChange={(e) =>
+                    setUpdateProject({
+                      ...updateProject,
+                      description: e.target.value,
+                    })
+                  }
+                  placeholder="Project description (optional)"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsUpdateDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateProject}>Save</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {isAdmin && (
+          <OrganisationManagementDialog
+            isOpen={isOrgManagementOpen}
+            onClose={() => setIsOrgManagementOpen(false)}
+          />
+        )}
+      </div>
+    </TooltipProvider>
   );
 };
 
