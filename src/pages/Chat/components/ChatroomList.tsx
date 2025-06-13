@@ -21,7 +21,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import projectService from '@/services/Projects/projectService';
 import { toast } from 'sonner';
 
-const ChatroomList = ({ selectedProjectId }: { selectedProjectId?: number }) => {
+interface ChatroomListProps {
+  selectedProjectId?: number;
+  onChatroomSelected?: () => void;
+}
+
+const ChatroomList: React.FC<ChatroomListProps> = ({ selectedProjectId, onChatroomSelected }) => {
     const dispatch = useDispatch<AppDispatch>();
     const { chatrooms, loading, error, selectedChatroom } = useSelector((state: RootState) => state.chat);
     const { user } = useSelector((state: RootState) => state.auth);
@@ -46,13 +51,20 @@ const ChatroomList = ({ selectedProjectId }: { selectedProjectId?: number }) => 
     }, [dispatch]);
 
     useEffect(() => {
-        if (chatrooms.length > 0 && !selectedChatroom) {
-            dispatch(selectChatroom(chatrooms[0]));
+        const relevantChatrooms = selectedProjectId
+            ? chatrooms.filter(c => c.type === 'project' && c.project_id === selectedProjectId)
+            : chatrooms.filter(c => c.type === 'organisation');
+
+        const isSelectedChatroomRelevant = selectedChatroom && relevantChatrooms.some(c => c.id === selectedChatroom.id);
+
+        if (!isSelectedChatroomRelevant && relevantChatrooms.length > 0) {
+            dispatch(selectChatroom(relevantChatrooms[0]));
         }
-    }, [chatrooms, selectedChatroom, dispatch]);
+    }, [selectedProjectId, chatrooms, selectedChatroom, dispatch]);
 
     const handleSelectChatroom = (chatroom: Chatroom) => {
         dispatch(selectChatroom(chatroom));
+        onChatroomSelected?.();
     };
 
     const handleCreateChatroom = async () => {

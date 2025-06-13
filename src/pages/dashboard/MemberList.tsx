@@ -165,7 +165,7 @@ const MemberList: React.FC = () => {
   };
 
   return (
-      <div className="w-60 bg-muted/40 p-3 flex flex-col gap-4">
+      <div className="h-full flex flex-col bg-muted/40 p-3 gap-4">
         <div>
           <div className="flex justify-between items-center">
             <div>
