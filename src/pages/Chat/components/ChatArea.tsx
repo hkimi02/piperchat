@@ -122,7 +122,7 @@ const ChatArea = () => {
                     <Input
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Type a message..."
+                        placeholder="Taper un message..."
                         className="flex-1"
                     />
                     <Button type="submit" size="icon" variant="ghost">

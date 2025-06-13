@@ -165,7 +165,7 @@ const MemberList: React.FC = () => {
   };
 
   return (
-      <div className="w-60 bg-muted/40 p-3 flex flex-col gap-4">
+      <div className="h-full flex flex-col bg-muted/40 p-3 gap-4">
         <div>
           <div className="flex justify-between items-center">
             <div>
@@ -183,7 +183,7 @@ const MemberList: React.FC = () => {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Invite Member</DialogTitle>
+                      <DialogTitle>Inviter un membre</DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                       <div className="grid gap-2">
@@ -197,7 +197,7 @@ const MemberList: React.FC = () => {
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button onClick={handleInvite}>Send Invitation</Button>
+                      <Button onClick={handleInvite}>Envoyer l'invitation</Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>

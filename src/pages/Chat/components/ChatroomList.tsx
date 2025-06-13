@@ -21,7 +21,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import projectService from '@/services/Projects/projectService';
 import { toast } from 'sonner';
 
-const ChatroomList = ({ selectedProjectId }: { selectedProjectId?: number }) => {
+interface ChatroomListProps {
+  selectedProjectId?: number;
+  onChatroomSelected?: () => void;
+}
+
+const ChatroomList: React.FC<ChatroomListProps> = ({ selectedProjectId, onChatroomSelected }) => {
     const dispatch = useDispatch<AppDispatch>();
     const { chatrooms, loading, error, selectedChatroom } = useSelector((state: RootState) => state.chat);
     const { user } = useSelector((state: RootState) => state.auth);
@@ -46,13 +51,20 @@ const ChatroomList = ({ selectedProjectId }: { selectedProjectId?: number }) => 
     }, [dispatch]);
 
     useEffect(() => {
-        if (chatrooms.length > 0 && !selectedChatroom) {
-            dispatch(selectChatroom(chatrooms[0]));
+        const relevantChatrooms = selectedProjectId
+            ? chatrooms.filter(c => c.type === 'project' && c.project_id === selectedProjectId)
+            : chatrooms.filter(c => c.type === 'organisation');
+
+        const isSelectedChatroomRelevant = selectedChatroom && relevantChatrooms.some(c => c.id === selectedChatroom.id);
+
+        if (!isSelectedChatroomRelevant && relevantChatrooms.length > 0) {
+            dispatch(selectChatroom(relevantChatrooms[0]));
         }
-    }, [chatrooms, selectedChatroom, dispatch]);
+    }, [selectedProjectId, chatrooms, selectedChatroom, dispatch]);
 
     const handleSelectChatroom = (chatroom: Chatroom) => {
         dispatch(selectChatroom(chatroom));
+        onChatroomSelected?.();
     };
 
     const handleCreateChatroom = async () => {
@@ -106,12 +118,12 @@ const ChatroomList = ({ selectedProjectId }: { selectedProjectId?: number }) => 
         <div className="w-full bg-muted/60 p-3 flex flex-col gap-4 border-r h-full">
             <div className="border-b pb-2 mb-2">
                 <h1 className="font-bold text-lg">
-                    {selectedProjectId ? 'Project Chat' : 'Organisation Chat'}
+                    {selectedProjectId ? 'Discussion du projet' : 'Discussion Générale'}
                 </h1>
             </div>
             <div className="flex-1">
                 <div className="flex justify-between items-center mb-2">
-                    <h2 className="font-semibold text-sm text-muted-foreground">Text Channels</h2>
+                    <h2 className="font-semibold text-sm text-muted-foreground">Salles de discussion</h2>
                     {user?.role === 'ADMIN' && (
                         <Dialog open={isCreateDialogOpen} onOpenChange={setCreateDialogOpen}>
                             <DialogTrigger asChild>
@@ -121,9 +133,9 @@ const ChatroomList = ({ selectedProjectId }: { selectedProjectId?: number }) => 
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[425px]">
                                 <DialogHeader>
-                                    <DialogTitle>Create Text Channel</DialogTitle>
+                                    <DialogTitle>Créer une salle de discussion</DialogTitle>
                                     <DialogDescription>
-                                        Create a new channel for your team. Project channels will include users assigned to tasks in the project.
+                                        Créer une nouvelle salle de discussion pour votre équipe. Les salles de discussion des projets incluront les utilisateurs affectés aux tâches du projet.
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="grid gap-4 py-4">
@@ -191,10 +203,9 @@ const ChatroomList = ({ selectedProjectId }: { selectedProjectId?: number }) => 
                 </div>
                 <ScrollArea className="h-[calc(100vh-150px)]">
                     <nav className="flex flex-col gap-1">
-                        <h3 className="font-semibold text-sm text-muted-foreground px-2 mt-4 mb-2">Channels</h3>
                         {filteredChatrooms.length === 0 ? (
                             <div className="text-sm text-muted-foreground text-center py-4">
-                                No channels available
+                                Aucune salle de discussion disponible
                             </div>
                         ) : (
                             filteredChatrooms.map((chatroom: Chatroom) => (
@@ -211,10 +222,10 @@ const ChatroomList = ({ selectedProjectId }: { selectedProjectId?: number }) => 
                             ))
                         )}
                         
-                        <h3 className="font-semibold text-sm text-muted-foreground px-2 mt-4 mb-2">Direct Messages</h3>
+                        <h3 className="font-semibold text-sm text-muted-foreground px-2 mt-4 mb-2">Messages privés</h3>
                         {privateChatrooms.length === 0 ? (
                             <div className="text-sm text-muted-foreground text-center py-4">
-                                No private messages
+                                Aucun message privé disponible
                             </div>
                         ) : (
                             privateChatrooms.map((chatroom: Chatroom) => (
