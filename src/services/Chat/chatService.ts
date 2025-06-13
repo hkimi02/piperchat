@@ -29,3 +29,19 @@ export const findOrCreatePrivateChatroom = async (userId: number) => {
     const response = await apiClient.post('/chatrooms/private/find-or-create', { userId });
     return response.data;
 };
+
+// Upload a file to a project
+export const uploadFile = async (projectId: string, file: File, messageId?: number) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (messageId) {
+        formData.append('message_id', String(messageId));
+    }
+
+    const response = await apiClient.post(`/projects/${projectId}/files`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
+};

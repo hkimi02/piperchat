@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import * as chatService from '@/services/Chat/chatService';
-import type { Chatroom, Message, Participant } from '@/pages/Chat/data';
+import type { Chatroom, Message, Participant, File as ChatFile } from '@/pages/Chat/data';
 
 // Define the shape of the chat state
 interface ChatState {
@@ -61,6 +61,20 @@ export const findOrCreatePrivateChatroom = createAsyncThunk(
     'chat/findOrCreatePrivateChatroom',
     async (userId: number) => {
         return await chatService.findOrCreatePrivateChatroom(userId);
+    }
+);
+
+export const uploadFile = createAsyncThunk(
+    'chat/uploadFile',
+    async ({ projectId, file, chatroomId }: { projectId: string; file: File; chatroomId: string }, { dispatch }) => {
+        const uploadedFile: ChatFile = await chatService.uploadFile(projectId, file);
+        // Post a message with the file object as a JSON string.
+        const content = JSON.stringify({
+            type: 'file',
+            data: uploadedFile,
+        });
+        await dispatch(postMessage({ chatroomId, content }));
+        return uploadedFile;
     }
 );
 
@@ -182,6 +196,16 @@ const chatSlice = createSlice({
             .addCase(findOrCreatePrivateChatroom.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.error.message || 'Failed to find or create private chatroom';
+            })
+            .addCase(uploadFile.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(uploadFile.fulfilled, (state) => {
+                state.loading = false;
+            })
+            .addCase(uploadFile.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message || 'Failed to upload file';
             });
     },
 });

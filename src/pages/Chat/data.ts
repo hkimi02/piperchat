@@ -15,6 +15,7 @@ export interface Message {
     user: User;
     created_at: string;
     chatroom_id: number;
+    files?: File[];
 }
 
 export interface Chatroom {
@@ -31,4 +32,11 @@ export interface Participant {
     id: number;
     full_name: string;
     streamType?: 'camera' | 'screen';
+}
+
+export interface File {
+    id: number;
+    name: string;
+    url: string;
+    type: string;
 }
