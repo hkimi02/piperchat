@@ -62,9 +62,10 @@ interface RootState {
 interface ProjectListProps {
   onSelectProject: (project: Project | null) => void;
   selectedProject: Project | null;
+  onProjectsLoaded?: (projects: Project[]) => void;
 }
 
-const ProjectList: React.FC<ProjectListProps> = ({ onSelectProject, selectedProject: activeProject }) => {
+const ProjectList: React.FC<ProjectListProps> = ({ onSelectProject, selectedProject: activeProject, onProjectsLoaded }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
@@ -81,6 +82,9 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelectProject, selectedProj
       try {
         const response = await projectService.getProjects();
         setProjects(response.data);
+        if (onProjectsLoaded) {
+            onProjectsLoaded(response.data);
+        }
       } catch (error) {
         console.error('Failed to fetch projects:', error);
         toast.error('Failed to fetch projects.');

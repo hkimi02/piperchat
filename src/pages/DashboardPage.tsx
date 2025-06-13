@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
     Dialog,
     DialogContent,
@@ -56,6 +57,7 @@ interface RootState {
 }
 
 const DashboardPage: React.FC = () => {
+    const location = useLocation();
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [isEditOpen, setEditOpen] = useState(false);
     const [projectForm, setProjectForm] = useState({ name: '', description: '' });
@@ -91,6 +93,16 @@ const DashboardPage: React.FC = () => {
         setSelectedProject(project);
     }, []);
 
+    const handleProjectsLoaded = useCallback((projects: Project[]) => {
+        const state = location.state as { selectedProjectId?: number };
+        if (state?.selectedProjectId) {
+            const projectToSelect = projects.find(p => p.id === state.selectedProjectId);
+            if (projectToSelect) {
+                setSelectedProject(projectToSelect);
+            }
+        }
+    }, [location.state]);
+
     const handleChatroomSelected = useCallback(() => {
         // Close mobile menu only after a channel is selected
         if (window.innerWidth < 768) {
@@ -106,6 +118,7 @@ const DashboardPage: React.FC = () => {
                     <ProjectList
                         selectedProject={selectedProject}
                         onSelectProject={handleSelectProject}
+                        onProjectsLoaded={handleProjectsLoaded}
                     />
                     <div className="w-64 bg-background border-r">
                         <ChatroomList selectedProjectId={selectedProject?.id} onChatroomSelected={handleChatroomSelected} />
@@ -118,11 +131,12 @@ const DashboardPage: React.FC = () => {
                 <ProjectList
                     selectedProject={selectedProject}
                     onSelectProject={handleSelectProject}
+                    onProjectsLoaded={handleProjectsLoaded}
                 />
+                <aside className="w-64 flex-col flex-shrink-0 border-r bg-background">
+                    <ChatroomList selectedProjectId={selectedProject?.id} onChatroomSelected={handleChatroomSelected} />
+                </aside>
             </div>
-            <aside className="hidden md:flex w-64 flex-col flex-shrink-0 border-r bg-background">
-                <ChatroomList selectedProjectId={selectedProject?.id} onChatroomSelected={handleChatroomSelected} />
-            </aside>
 
             {/* --- Main Content Area (Chat + Member List) --- */}
             <div className="flex-1 flex min-w-0 relative">

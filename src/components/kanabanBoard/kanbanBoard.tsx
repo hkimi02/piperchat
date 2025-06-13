@@ -523,12 +523,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectId }) => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-            <div className="bg-white border-b border-gray-2">
-                <div className="max-w-7xl mx-auto px-6 py-4">
-                    <h1 className="text-2xl font-bold text-gray-900">Kanban Board</h1>
-                </div>
-            </div>
-
+           
             {editTask && (
                 <Dialog open={!!editTask} onOpenChange={() => setEditTask(null)}>
                     <DialogContent className="sm:max-w-[425px]">
