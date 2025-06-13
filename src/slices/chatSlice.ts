@@ -66,8 +66,8 @@ export const findOrCreatePrivateChatroom = createAsyncThunk(
 
 export const uploadFile = createAsyncThunk(
     'chat/uploadFile',
-    async ({ projectId, file, chatroomId }: { projectId: string; file: File; chatroomId: string }, { dispatch }) => {
-        const uploadedFile: ChatFile = await chatService.uploadFile(projectId, file);
+    async ({ chatroomId, file }: { chatroomId: string; file: File }, { dispatch }) => {
+        const uploadedFile: ChatFile = await chatService.uploadFile(chatroomId, file);
         // Post a message with the file object as a JSON string.
         const content = JSON.stringify({
             type: 'file',

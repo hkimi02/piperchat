@@ -61,11 +61,10 @@ const ChatArea = () => {
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file && selectedChatroom?.project_id && chatroomId) {
+        if (file && chatroomId) {
             dispatch(uploadFile({
-                projectId: String(selectedChatroom.project_id),
+                chatroomId: String(chatroomId),
                 file: file,
-                chatroomId: String(chatroomId)
             }));
         }
         if (fileInputRef.current) {
@@ -144,11 +143,9 @@ const ChatArea = () => {
                         onChange={handleFileChange}
                         className="hidden"
                     />
-                    {selectedChatroom.type === 'project' && (
-                        <Button type="button" size="icon" variant="ghost" onClick={handleAttachmentClick} disabled={loading}>
-                            <Paperclip className="h-5 w-5" />
-                        </Button>
-                    )}
+                    <Button type="button" size="icon" variant="ghost" onClick={handleAttachmentClick} disabled={loading}>
+                        <Paperclip className="h-5 w-5" />
+                    </Button>
                     <Input
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
