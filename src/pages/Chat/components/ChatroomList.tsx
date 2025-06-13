@@ -55,11 +55,14 @@ const ChatroomList: React.FC<ChatroomListProps> = ({ selectedProjectId, onChatro
             ? chatrooms.filter(c => c.type === 'project' && c.project_id === selectedProjectId)
             : chatrooms.filter(c => c.type === 'organisation');
 
-        const isSelectedChatroomRelevant = selectedChatroom && relevantChatrooms.some(c => c.id === selectedChatroom.id);
-
-        if (!isSelectedChatroomRelevant && relevantChatrooms.length > 0) {
+        // Only auto-select if no chatroom is selected, or if the selected one no longer exists
+        if (
+            (!selectedChatroom && relevantChatrooms.length > 0) ||
+            (selectedChatroom && !chatrooms.some(c => c.id === selectedChatroom.id) && relevantChatrooms.length > 0)
+        ) {
             dispatch(selectChatroom(relevantChatrooms[0]));
         }
+        // Otherwise, do not override the user's selection
     }, [selectedProjectId, chatrooms, selectedChatroom, dispatch]);
 
     const handleSelectChatroom = (chatroom: Chatroom) => {
