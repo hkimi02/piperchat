@@ -4,13 +4,18 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Kanban, Pencil, Users, Menu } from 'lucide-react';
+import { Kanban, Pencil, Users, Menu, MoreVertical } from 'lucide-react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import projectService from '@/services/Projects/projectService';
 import { Button } from '@/components/ui/button';
 import ProjectList from '@/pages/dashboard/ProjectList';
@@ -96,7 +101,7 @@ const DashboardPage: React.FC = () => {
     return (
         <div className="flex h-[calc(100vh-3.5rem)] text-foreground bg-background">
             {/* --- Mobile: Combined Sidebar (Projects + Channels) --- */}
-            <aside className={`absolute md:hidden top-0 left-0 h-full z-40 flex transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside className={`fixed top-0 left-0 h-screen z-50 flex transition-transform duration-300 ease-in-out md:hidden ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="flex h-full">
                     <ProjectList
                         selectedProject={selectedProject}
@@ -135,32 +140,46 @@ const DashboardPage: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-2">
                             {selectedProject && (
-                                <div className="hidden md:flex items-center gap-2">
-                                    {currentUser?.role === 'ADMIN' && (
-                                        <Dialog open={isEditOpen} onOpenChange={setEditOpen}>
-                                            <DialogTrigger asChild>
-                                                <Button variant="outline" size="sm"><Pencil className="h-4 w-4 mr-2" />Edit</Button>
-                                            </DialogTrigger>
-                                            <DialogContent>
-                                                <DialogHeader><DialogTitle>Edit Project</DialogTitle></DialogHeader>
-                                                <div className="grid gap-4 py-4">
-                                                    <div className="grid gap-2">
-                                                        <Label htmlFor="name">Name</Label>
-                                                        <Input id="name" value={projectForm.name} onChange={(e) => setProjectForm({ ...projectForm, name: e.target.value })} />
-                                                    </div>
-                                                    <div className="grid gap-2">
-                                                        <Label htmlFor="description">Description</Label>
-                                                        <Textarea id="description" value={projectForm.description} onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })} />
-                                                    </div>
-                                                </div>
-                                                <DialogFooter><Button onClick={handleUpdateProject}>Save Changes</Button></DialogFooter>
-                                            </DialogContent>
-                                        </Dialog>
-                                    )}
-                                    <Link to={`/kanban/${selectedProject.id}`}>
-                                        <Button variant="outline" size="sm"><Kanban className="h-4 w-4 mr-2" />Board</Button>
-                                    </Link>
-                                </div>
+                                <>
+                                    {/* Desktop Buttons */}
+                                    <div className="hidden md:flex items-center gap-2">
+                                        {currentUser?.role === 'ADMIN' && (
+                                            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+                                                <Pencil className="h-4 w-4 mr-2" />Edit
+                                            </Button>
+                                        )}
+                                        <Link to={`/kanban/${selectedProject.id}`}>
+                                            <Button variant="outline" size="sm">
+                                                <Kanban className="h-4 w-4 mr-2" />Board
+                                            </Button>
+                                        </Link>
+                                    </div>
+
+                                    {/* Mobile Dropdown */}
+                                    <div className="md:hidden">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon">
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                {currentUser?.role === 'ADMIN' && (
+                                                    <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                        <span>Edit</span>
+                                                    </DropdownMenuItem>
+                                                )}
+                                                <DropdownMenuItem asChild>
+                                                    <Link to={`/kanban/${selectedProject.id}`} className="flex items-center w-full">
+                                                        <Kanban className="mr-2 h-4 w-4" />
+                                                        <span>Board</span>
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                </>
                             )}
                             <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMemberListOpen(true)}>
                                 <Users className="h-6 w-6" />
@@ -172,7 +191,7 @@ const DashboardPage: React.FC = () => {
                     </div>
                 </main>
 
-                <aside className={`absolute md:static top-0 right-0 h-full z-30 w-64 bg-muted/40 border-l transition-transform duration-300 ease-in-out md:flex flex-col flex-shrink-0 ${isMemberListOpen ? 'translate-x-0' : 'translate-x-full'} md:translate-x-0`}>
+                <aside className={`fixed md:static top-0 right-0 h-screen z-50 w-64 bg-background border-l transition-transform duration-300 ease-in-out md:flex flex-col flex-shrink-0 ${isMemberListOpen ? 'translate-x-0' : 'translate-x-full'} md:translate-x-0`}>
                     <MemberList />
                 </aside>
             </div>
@@ -180,12 +199,32 @@ const DashboardPage: React.FC = () => {
             {/* Overlay for mobile sidebars */}
             {(isMobileMenuOpen || isMemberListOpen) && (
                 <div
-                    className="md:hidden fixed inset-0 bg-black/50 z-20"
+                    className="fixed md:hidden inset-0 bg-black/50 z-40"
                     onClick={() => {
                         setMobileMenuOpen(false);
                         setMemberListOpen(false);
                     }}
                 />
+            )}
+
+            {/* Edit Project Dialog */}
+            {selectedProject && currentUser?.role === 'ADMIN' && (
+                <Dialog open={isEditOpen} onOpenChange={setEditOpen}>
+                    <DialogContent>
+                        <DialogHeader><DialogTitle>Edit Project</DialogTitle></DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="name">Name</Label>
+                                <Input id="name" value={projectForm.name} onChange={(e) => setProjectForm({ ...projectForm, name: e.target.value })} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="description">Description</Label>
+                                <Textarea id="description" value={projectForm.description} onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })} />
+                            </div>
+                        </div>
+                        <DialogFooter><Button onClick={handleUpdateProject}>Save Changes</Button></DialogFooter>
+                    </DialogContent>
+                </Dialog>
             )}
         </div>
     );
