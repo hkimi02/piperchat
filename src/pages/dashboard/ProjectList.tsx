@@ -170,7 +170,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelectProject, selectedProj
               </div>
             </TooltipTrigger>
             <TooltipContent side="right">
-              <p>Home</p>
+              <p>Acceuil</p>
             </TooltipContent>
           </Tooltip>
           <Separator className="my-2" />
@@ -227,7 +227,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelectProject, selectedProj
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right">
-                <p>Add Project</p>
+                <p>Ajouter un projet</p>
               </TooltipContent>
             </Tooltip>
           )}
@@ -245,7 +245,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelectProject, selectedProj
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right">
-                <p>Manage Organisation</p>
+                <p>Gestion de l'organisation</p>
               </TooltipContent>
             </Tooltip>
           )}
@@ -254,40 +254,40 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelectProject, selectedProj
         {/* Dialogs for adding/updating projects and managing organisation */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Add New Project</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Ajouter un projet</DialogTitle></DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" value={newProject.name} onChange={(e) => setNewProject({ ...newProject, name: e.target.value })} placeholder="Project name" />
+                <Label htmlFor="name">Nom</Label>
+                <Input id="name" value={newProject.name} onChange={(e) => setNewProject({ ...newProject, name: e.target.value })} placeholder="Nom du projet" />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="description">Description</Label>
-                <Input id="description" value={newProject.description} onChange={(e) => setNewProject({ ...newProject, description: e.target.value })} placeholder="Project description (optional)" />
+                <Input id="description" value={newProject.description} onChange={(e) => setNewProject({ ...newProject, description: e.target.value })} placeholder="Description du projet (optionnel)" />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleAddProject}>Save</Button>
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Annuler</Button>
+              <Button onClick={handleAddProject}>Sauvegarder</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
         <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Update Project</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Mettre à jour le projet</DialogTitle></DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="update-name">Name</Label>
-                <Input id="update-name" value={updateProject.name} onChange={(e) => setUpdateProject({ ...updateProject, name: e.target.value })} placeholder="Project name" />
+                <Label htmlFor="update-name">Nom</Label>
+                <Input id="update-name" value={updateProject.name} onChange={(e) => setUpdateProject({ ...updateProject, name: e.target.value })} placeholder="Nom du projet" />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="update-description">Description</Label>
-                <Input id="update-description" value={updateProject.description} onChange={(e) => setUpdateProject({ ...updateProject, description: e.target.value })} placeholder="Project description (optional)" />
+                <Input id="update-description" value={updateProject.description} onChange={(e) => setUpdateProject({ ...updateProject, description: e.target.value })} placeholder="Description du projet (optionnel)" />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsUpdateDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleUpdateProject}>Save</Button>
+              <Button variant="outline" onClick={() => setIsUpdateDialogOpen(false)}>Annuler</Button>
+              <Button onClick={handleUpdateProject}>Sauvegarder</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

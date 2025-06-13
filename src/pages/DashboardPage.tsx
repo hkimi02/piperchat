@@ -159,12 +159,12 @@ const DashboardPage: React.FC = () => {
                                     <div className="hidden md:flex items-center gap-2">
                                         {currentUser?.role === 'ADMIN' && (
                                             <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-                                                <Pencil className="h-4 w-4 mr-2" />Edit
+                                                <Pencil className="h-4 w-4 mr-2" />Modifier le projet
                                             </Button>
                                         )}
                                         <Link to={`/kanban/${selectedProject.id}`}>
                                             <Button variant="outline" size="sm">
-                                                <Kanban className="h-4 w-4 mr-2" />Board
+                                                <Kanban className="h-4 w-4 mr-2" />Tableau des tâches
                                             </Button>
                                         </Link>
                                     </div>
@@ -181,13 +181,13 @@ const DashboardPage: React.FC = () => {
                                                 {currentUser?.role === 'ADMIN' && (
                                                     <DropdownMenuItem onSelect={() => setEditOpen(true)}>
                                                         <Pencil className="mr-2 h-4 w-4" />
-                                                        <span>Edit</span>
+                                                        <span>Modifier le projet</span>
                                                     </DropdownMenuItem>
                                                 )}
                                                 <DropdownMenuItem asChild>
                                                     <Link to={`/kanban/${selectedProject.id}`} className="flex items-center w-full">
                                                         <Kanban className="mr-2 h-4 w-4" />
-                                                        <span>Board</span>
+                                                        <span>Tableau des tâches</span>
                                                     </Link>
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>

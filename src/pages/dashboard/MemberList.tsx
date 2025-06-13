@@ -183,7 +183,7 @@ const MemberList: React.FC = () => {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Invite Member</DialogTitle>
+                      <DialogTitle>Inviter un membre</DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                       <div className="grid gap-2">
@@ -197,7 +197,7 @@ const MemberList: React.FC = () => {
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button onClick={handleInvite}>Send Invitation</Button>
+                      <Button onClick={handleInvite}>Envoyer l'invitation</Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>

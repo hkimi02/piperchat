@@ -1,11 +1,14 @@
 // src/pages/LandingPage/components/HeroSection.tsx
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Rocket } from 'lucide-react'; // Example icons
+import { useSelector } from 'react-redux';
+import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
+import { Rocket, ArrowRight } from 'lucide-react';
+import { type RootState } from '@/store/store';
 
-const HeroSection: React.FC = () => {
+const HeroSection = () => {
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+
   return (
     <section className="py-20 md:py-32 text-center bg-gradient-to-br from-background to-secondary/10">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -28,18 +31,29 @@ const HeroSection: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="flex flex-col sm:flex-row justify-center items-center gap-4"
         >
-          <Button size="lg" asChild className="shadow-lg hover:shadow-primary/30 transition-shadow">
-            <Link to="/register">
-              Commencer Gratuitement
-              <Rocket className="ml-2 h-5 w-5" />
-            </Link>
-          </Button>
-          <Button variant="outline" size="lg" asChild className="shadow-lg hover:shadow-accent/30 transition-shadow">
-            <Link to="/login"> {/* Link to a future "How it Works" section */}
-              Connexion
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-          </Button>
+          {isAuthenticated ? (
+            <Button size="lg" asChild className="shadow-lg hover:shadow-primary/30 transition-shadow">
+              <Link to="/dashboard">
+              Accéder à l'application
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
+          ) : (
+            <>
+              <Button size="lg" asChild className="shadow-lg hover:shadow-primary/30 transition-shadow">
+                <Link to="/register">
+                  Commencer Gratuitement
+                  <Rocket className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild className="shadow-lg hover:shadow-accent/30 transition-shadow">
+                <Link to="/login">
+                  Connexion
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+            </>
+          )}
         </motion.div>
       </div>
     </section>

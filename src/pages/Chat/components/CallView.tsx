@@ -60,15 +60,15 @@ const CallView = () => {
                                 {pinnedParticipant.full_name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                         </Avatar>
-                        <p className="text-xl text-muted-foreground">Connecting to {pinnedParticipant.full_name}...</p>
+                        <p className="text-xl text-muted-foreground">Connexion en cours avec {pinnedParticipant.full_name}...</p>
                     </div>
                 ) : (
                     <div className="text-center text-muted-foreground">
-                        <h2 className="text-2xl font-bold">Call in Progress</h2>
+                        <h2 className="text-2xl font-bold">Appel en cours</h2>
                         <p>
                             {remoteParticipants.length === 0 
-                                ? "Waiting for others to join..." 
-                                : "Select a participant to view their stream."}
+                                ? "En attente que les autres se joignent..." 
+                                : "Sélectionnez un participant pour voir leur flux."}
                         </p>
                     </div>
                 )}
@@ -105,7 +105,7 @@ const CallView = () => {
             {localStream && (
                 <div className="absolute top-4 right-4 w-48 h-32 bg-muted rounded-lg overflow-hidden border-2 border-primary shadow-lg">
                      <StreamPlayer stream={localStream} isMuted={true} />
-                     <p className="absolute bottom-1 left-1 text-sm font-semibold bg-card/80 text-card-foreground px-2 rounded">You</p>
+                     <p className="absolute bottom-1 left-1 text-sm font-semibold bg-card/80 text-card-foreground px-2 rounded">Vous</p>
                 </div>
             )}
 

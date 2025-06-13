@@ -43,7 +43,7 @@ const KanbanPage: React.FC = () => {
     useEffect(() => {
         const fetchProjectData = async () => {
             if (!projectId) {
-                toast.error('Project ID is missing.');
+                toast.error('Projet non trouvé.');
                 setLoading(false);
                 return;
             }
@@ -55,7 +55,7 @@ const KanbanPage: React.FC = () => {
                 setSelectedProjectForList(projectResponse.data);
             } catch (error) {
                 console.error('Failed to fetch project:', error);
-                toast.error('Failed to fetch project.');
+                toast.error('Projet non trouvé.');
                 setProject(null);
             } finally {
                 setLoading(false);
@@ -82,15 +82,15 @@ const KanbanPage: React.FC = () => {
     };
 
     if (loading) {
-        return <div className="flex items-center justify-center h-full">Loading...</div>;
+        return <div className="flex items-center justify-center h-full">Chargement...</div>;
     }
 
     if (!project) {
         return (
             <div className="flex flex-col items-center justify-center h-full">
-                <h2 className="text-xl font-semibold">Project Not Found</h2>
+                <h2 className="text-xl font-semibold">Projet non trouvé</h2>
                 <Button variant="outline" className="mt-4" onClick={() => navigate('/dashboard')}>
-                    Back to Dashboard
+                    Retour au disussion générale
                 </Button>
             </div>
         );
@@ -110,7 +110,7 @@ const KanbanPage: React.FC = () => {
                         <Button variant="ghost" size="icon" onClick={handleGoBack}>
                             <ChevronLeft className="h-6 w-6" />
                         </Button>
-                        <h2 className="text-xl font-semibold">{project.name} - Kanban Board</h2>
+                        <h2 className="text-xl font-semibold">{project.name} - Tableau des tâches</h2>
                     </div>
                 </header>
                 <div className="flex-1 overflow-y-auto p-4">
