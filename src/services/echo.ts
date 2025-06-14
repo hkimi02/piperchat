@@ -19,7 +19,7 @@ const echo = new Echo({
     authorizer: (channel: any) => {
         return {
             authorize: (socketId: string, callback: (error: Error | null, authData: any) => void) => {
-                apiClient.post('/broadcasting/auth', {
+                apiClient.post(import.meta.env.VITE_BASE_URL + '/broadcasting/auth', {
                     socket_id: socketId,
                     channel_name: channel.name
                 })
