@@ -101,11 +101,19 @@ const StatisticsPage: React.FC = () => {
             return { actual: [], ideal: [] };
         }
 
-        const dates = tasks
-            .map((task) => new Date(task.created_at).getTime())
+        // Filter tasks that have due dates and get the date range
+        const tasksWithDueDates = tasks.filter(task => task.due_date);
+
+        if (tasksWithDueDates.length === 0) {
+            return { actual: [], ideal: [] };
+        }
+
+        const dates = tasksWithDueDates
+            .map((task) => new Date(task.due_date!).getTime())
             .filter((date) => !isNaN(date));
+
         const startDate = new Date(Math.min(...dates));
-        const endDate = new Date(); // Current date: June 14, 2025
+        const endDate = new Date(Math.max(...dates));
         startDate.setHours(0, 0, 0, 0);
         endDate.setHours(23, 59, 59, 999);
 
@@ -116,24 +124,24 @@ const StatisticsPage: React.FC = () => {
             currentDate.setDate(currentDate.getDate() + 1);
         }
 
-        const totalTasks = tasks.length;
+        const totalTasks = tasksWithDueDates.length;
         const actual: [number, number][] = [];
-        let remainingTasks = totalTasks;
 
         dateRange.forEach((date) => {
             const timestamp = date.getTime();
-            const completedTasks = tasks.filter(
+            const completedTasks = tasksWithDueDates.filter(
                 (task) =>
                     task.status === 'done' &&
-                    new Date(task.created_at).getTime() <= timestamp
+                    task.due_date &&
+                    new Date(task.due_date).getTime() <= timestamp
             ).length;
-            remainingTasks = totalTasks - completedTasks;
+            const remainingTasks = totalTasks - completedTasks;
             actual.push([timestamp, remainingTasks]);
         });
 
         const ideal: [number, number][] = [];
         const days = dateRange.length;
-        const tasksPerDay = totalTasks / (days - 1);
+        const tasksPerDay = totalTasks / (days - 1 || 1);
         dateRange.forEach((date, index) => {
             const timestamp = date.getTime();
             const remaining = Math.max(0, totalTasks - tasksPerDay * index);
@@ -152,7 +160,7 @@ const StatisticsPage: React.FC = () => {
         },
         xAxis: {
             type: 'datetime',
-            title: { text: 'Date' },
+            title: { text: 'Date d\'échéance' },
             dateTimeLabelFormats: { day: '%e %b' },
         },
         yAxis: {
@@ -187,15 +195,39 @@ const StatisticsPage: React.FC = () => {
             },
         },
         credits: { enabled: false },
-        chart: { height: 400 },
+        chart: { height: 300 },
         responsive: {
             rules: [
                 {
-                    condition: { maxWidth: 500 },
+                    condition: { maxWidth: 768 },
                     chartOptions: {
+                        chart: { height: 280 },
                         title: { style: { fontSize: '14px' } },
-                        xAxis: { title: { style: { fontSize: '12px' } } },
-                        yAxis: { title: { style: { fontSize: '12px' } } },
+                        xAxis: {
+                            title: { style: { fontSize: '11px' } },
+                            labels: { style: { fontSize: '10px' } }
+                        },
+                        yAxis: {
+                            title: { style: { fontSize: '11px' } },
+                            labels: { style: { fontSize: '10px' } }
+                        },
+                        legend: { itemStyle: { fontSize: '11px' } },
+                    },
+                },
+                {
+                    condition: { maxWidth: 480 },
+                    chartOptions: {
+                        chart: { height: 250 },
+                        title: { style: { fontSize: '12px' } },
+                        xAxis: {
+                            title: { style: { fontSize: '10px' } },
+                            labels: { style: { fontSize: '9px' } }
+                        },
+                        yAxis: {
+                            title: { style: { fontSize: '10px' } },
+                            labels: { style: { fontSize: '9px' } }
+                        },
+                        legend: { itemStyle: { fontSize: '10px' } },
                     },
                 },
             ],
@@ -203,7 +235,7 @@ const StatisticsPage: React.FC = () => {
     };
 
     const priorityOptions: Highcharts.Options = {
-        chart: { type: 'pie', height: 300 },
+        chart: { type: 'pie', height: 280 },
         title: {
             text: 'Tâches par Priorité',
             style: { fontSize: '16px', fontWeight: 'bold' },
@@ -232,17 +264,38 @@ const StatisticsPage: React.FC = () => {
                     format: '{point.name}: {point.y}',
                     style: { fontSize: '12px' },
                 },
+                size: '85%',
             },
         },
         credits: { enabled: false },
         responsive: {
             rules: [
                 {
-                    condition: { maxWidth: 500 },
+                    condition: { maxWidth: 768 },
                     chartOptions: {
+                        chart: { height: 260 },
                         title: { style: { fontSize: '14px' } },
                         plotOptions: {
-                            pie: { dataLabels: { style: { fontSize: '10px' } } },
+                            pie: {
+                                dataLabels: { style: { fontSize: '10px' } },
+                                size: '90%',
+                            },
+                        },
+                    },
+                },
+                {
+                    condition: { maxWidth: 480 },
+                    chartOptions: {
+                        chart: { height: 240 },
+                        title: { style: { fontSize: '12px' } },
+                        plotOptions: {
+                            pie: {
+                                dataLabels: {
+                                    style: { fontSize: '9px' },
+                                    format: '{point.y}',
+                                },
+                                size: '95%',
+                            },
                         },
                     },
                 },
@@ -251,7 +304,7 @@ const StatisticsPage: React.FC = () => {
     };
 
     const statusOptions: Highcharts.Options = {
-        chart: { type: 'column', height: 300 },
+        chart: { type: 'column', height: 280 },
         title: {
             text: 'Tâches par Statut',
             style: { fontSize: '16px', fontWeight: 'bold' },
@@ -259,6 +312,7 @@ const StatisticsPage: React.FC = () => {
         xAxis: {
             categories: ['À faire', 'En cours', 'En révision', 'Terminé'],
             title: { text: 'Statut' },
+            labels: { style: { fontSize: '12px' } },
         },
         yAxis: {
             title: { text: 'Nombre de tâches' },
@@ -284,19 +338,48 @@ const StatisticsPage: React.FC = () => {
         plotOptions: {
             column: {
                 dataLabels: { enabled: true, format: '{y}', style: { fontSize: '12px' } },
+                borderRadius: 2,
             },
         },
         credits: { enabled: false },
         responsive: {
             rules: [
                 {
-                    condition: { maxWidth: 500 },
+                    condition: { maxWidth: 768 },
                     chartOptions: {
+                        chart: { height: 260 },
                         title: { style: { fontSize: '14px' } },
-                        xAxis: { title: { style: { fontSize: '12px' } } },
-                        yAxis: { title: { style: { fontSize: '12px' } } },
+                        xAxis: {
+                            title: { style: { fontSize: '11px' } },
+                            labels: { style: { fontSize: '10px' } }
+                        },
+                        yAxis: {
+                            title: { style: { fontSize: '11px' } },
+                            labels: { style: { fontSize: '10px' } }
+                        },
                         plotOptions: {
                             column: { dataLabels: { style: { fontSize: '10px' } } },
+                        },
+                    },
+                },
+                {
+                    condition: { maxWidth: 480 },
+                    chartOptions: {
+                        chart: { height: 240 },
+                        title: { style: { fontSize: '12px' } },
+                        xAxis: {
+                            title: { style: { fontSize: '10px' } },
+                            labels: {
+                                style: { fontSize: '9px' },
+                                rotation: -45,
+                            }
+                        },
+                        yAxis: {
+                            title: { style: { fontSize: '10px' } },
+                            labels: { style: { fontSize: '9px' } }
+                        },
+                        plotOptions: {
+                            column: { dataLabels: { style: { fontSize: '9px' } } },
                         },
                     },
                 },
@@ -314,8 +397,8 @@ const StatisticsPage: React.FC = () => {
 
     if (!stats.tasks.length && !loading) {
         return (
-            <div className="flex flex-col items-center justify-center h-full">
-                <h2 className="text-lg font-semibold">Aucune donnée disponible</h2>
+            <div className="flex flex-col items-center justify-center h-full px-4">
+                <h2 className="text-lg font-semibold text-center">Aucune donnée disponible</h2>
                 <Button variant="outline" className="mt-3" onClick={handleGoBack}>
                     Retour au tableau de bord
                 </Button>
@@ -331,44 +414,64 @@ const StatisticsPage: React.FC = () => {
                     onSelectProject={handleSelectProject}
                 />
             </aside>
-            <main className="flex-1 flex flex-col">
-                <header className="flex items-center justify-between p-3 border-b bg-background">
-                    <div className="flex items-center gap-3">
+
+            <main className="flex-1 flex flex-col min-w-0">
+                {/* Header */}
+                <header className="flex items-center justify-between p-3 lg:p-4 border-b bg-background">
+                    <div className="flex items-center gap-2 lg:gap-3 min-w-0">
                         <Button variant="ghost" size="icon" onClick={handleGoBack}>
-                            <ChevronLeft className="h-5 w-5" />
+                            <ChevronLeft className="h-4 w-4 lg:h-5 lg:w-5" />
                         </Button>
-                        <h2 className="text-lg font-semibold">{projectName} - Statistiques</h2>
+                        <h2 className="text-base lg:text-lg font-semibold truncate">
+                            <span className="hidden sm:inline">{projectName} - </span>
+                            Statistiques
+                        </h2>
                     </div>
                 </header>
-                <div className="flex-1 overflow-y-auto p-2 sm:p-4">
-                    <div className="max-w-4xl mx-auto space-y-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg sm:text-xl">
-                                    Statistiques pour {projectName}
+
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-2 sm:p-4 lg:p-6">
+                    <div className="max-w-7xl mx-auto space-y-4 lg:space-y-6">
+                        {/* Burndown Chart */}
+                        <Card className="w-full">
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-base sm:text-lg lg:text-xl flex items-center gap-2">
+                                    <span className="hidden sm:inline">Statistiques pour</span>
+                                    <span className="truncate">{projectName}</span>
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <HighchartsReact highcharts={Highcharts} options={burndownOptions} />
+                            <CardContent className="pt-0">
+                                <div className="w-full overflow-hidden">
+                                    <HighchartsReact highcharts={Highcharts} options={burndownOptions} />
+                                </div>
                             </CardContent>
                         </Card>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-base sm:text-lg">Tâches par Priorité</CardTitle>
+                        {/* Priority and Status Charts */}
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
+                            <Card className="w-full">
+                                <CardHeader className="pb-3">
+                                    <CardTitle className="text-sm sm:text-base lg:text-lg">
+                                        Tâches par Priorité
+                                    </CardTitle>
                                 </CardHeader>
-                                <CardContent>
-                                    <HighchartsReact highcharts={Highcharts} options={priorityOptions} />
+                                <CardContent className="pt-0">
+                                    <div className="w-full overflow-hidden">
+                                        <HighchartsReact highcharts={Highcharts} options={priorityOptions} />
+                                    </div>
                                 </CardContent>
                             </Card>
 
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-base sm:text-lg">Tâches par Statut</CardTitle>
+                            <Card className="w-full">
+                                <CardHeader className="pb-3">
+                                    <CardTitle className="text-sm sm:text-base lg:text-lg">
+                                        Tâches par Statut
+                                    </CardTitle>
                                 </CardHeader>
-                                <CardContent>
-                                    <HighchartsReact highcharts={Highcharts} options={statusOptions} />
+                                <CardContent className="pt-0">
+                                    <div className="w-full overflow-hidden">
+                                        <HighchartsReact highcharts={Highcharts} options={statusOptions} />
+                                    </div>
                                 </CardContent>
                             </Card>
                         </div>
