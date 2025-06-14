@@ -10,7 +10,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Kanban, Pencil, Users, Menu, MoreVertical } from 'lucide-react';
+import {Kanban, Pencil, Users, Menu, MoreVertical, List, BarChart2} from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -167,6 +167,11 @@ const DashboardPage: React.FC = () => {
                                                 <Kanban className="h-4 w-4 mr-2" />Tableau des tâches
                                             </Button>
                                         </Link>
+                                        <Link to={`/statistics/${selectedProject.id}`}>
+                                            <Button variant="outline" size="sm">
+                                                <BarChart2 className="h-4 w-4 mr-2" />Statistiques
+                                            </Button>
+                                        </Link>
                                     </div>
 
                                     {/* Mobile Dropdown */}
@@ -188,6 +193,12 @@ const DashboardPage: React.FC = () => {
                                                     <Link to={`/kanban/${selectedProject.id}`} className="flex items-center w-full">
                                                         <Kanban className="mr-2 h-4 w-4" />
                                                         <span>Tableau des tâches</span>
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem asChild>
+                                                    <Link to={`/statistics/${selectedProject.id}`} className="flex items-center w-full">
+                                                        <BarChart2 className="mr-2 h-4 w-4" />
+                                                        <span>Statistiques</span>
                                                     </Link>
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>

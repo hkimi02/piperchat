@@ -54,7 +54,7 @@ const KanbanPage: React.FC = () => {
                 setProject(projectResponse.data);
                 setSelectedProjectForList(projectResponse.data);
             } catch (error) {
-                console.error('Failed to fetch project:', error);
+                console.error('Échec du chargement du projet:', error);
                 toast.error('Projet non trouvé.');
                 setProject(null);
             } finally {
@@ -88,32 +88,32 @@ const KanbanPage: React.FC = () => {
     if (!project) {
         return (
             <div className="flex flex-col items-center justify-center h-full">
-                <h2 className="text-xl font-semibold">Projet non trouvé</h2>
-                <Button variant="outline" className="mt-4" onClick={() => navigate('/dashboard')}>
-                    Retour au disussion générale
+                <h2 className="text-lg font-semibold">Projet non trouvé</h2>
+                <Button variant="outline" className="mt-3" onClick={() => navigate('/dashboard')}>
+                    Retour au tableau de bord
                 </Button>
             </div>
         );
     }
 
     return (
-        <div className="flex h-[calc(100vh-3.5rem)] text-foreground bg-background">
-            <aside className="hidden md:flex md:flex-col w-20">
+        <div className="flex h-[calc(100vh-3rem)] text-foreground bg-background">
+            <aside className="hidden md:flex md:flex-col w-16 bg-gray-50 border-r">
                 <ProjectList
                     selectedProject={selectedProjectForList}
                     onSelectProject={handleSelectProject}
                 />
             </aside>
             <main className="flex-1 flex flex-col">
-                <header className="flex items-center justify-between p-4 border-b">
-                    <div className="flex items-center gap-4">
+                <header className="flex items-center justify-between p-3 border-b bg-background">
+                    <div className="flex items-center gap-3">
                         <Button variant="ghost" size="icon" onClick={handleGoBack}>
-                            <ChevronLeft className="h-6 w-6" />
+                            <ChevronLeft className="h-5 w-5" />
                         </Button>
-                        <h2 className="text-xl font-semibold">{project.name} - Tableau des tâches</h2>
+                        <h2 className="text-lg font-semibold">{project.name} - Tableau Kanban</h2>
                     </div>
                 </header>
-                <div className="flex-1 overflow-y-auto p-4">
+                <div className="flex-1 overflow-y-auto">
                     <KanbanBoard projectId={project.id} />
                 </div>
             </main>
