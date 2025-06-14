@@ -20,11 +20,14 @@ import { Provider } from 'react-redux';
 import store from '@/store/store.ts';
 import { Toaster } from 'react-hot-toast';
 import KanbanPage from "@/pages/KanabanPage.tsx";
+import InstallPrompt from "@/components/layout/InstallPrompt.tsx";
+import StatisticsPage from "@/pages/StatisticsPage.tsx";
 
 function App() {
   return (
       <Provider store={store}>
         <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+        <InstallPrompt />
         <Router>
           <Routes>
 
@@ -53,6 +56,8 @@ function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
 
                 <Route path="/kanban/:projectId" element={<KanbanPage />} />
+
+                <Route path="/statistics/:projectId" element={<StatisticsPage />} />
               </Route>
             </Route>
 
