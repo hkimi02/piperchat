@@ -149,7 +149,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelectProject, selectedProj
 
   return (
       <TooltipProvider>
-        <div className="h-full flex flex-col items-center gap-4 py-3 px-2 bg-muted/20 border-r">
+                <div className="h-full flex flex-col items-center gap-4 py-3 px-2 bg-muted border-r">
           <nav className="flex flex-col items-center gap-2 flex-grow">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -213,7 +213,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelectProject, selectedProj
             ))}
           </nav>
 
-          <div className="flex flex-col items-center gap-4">
+                    <div className="flex flex-col items-center gap-4">
             {isAdmin && (
                 <Tooltip>
                   <TooltipTrigger asChild>
